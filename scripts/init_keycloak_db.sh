@@ -8,7 +8,7 @@ if [ "${ENABLE_KEYCLOAK_PROXY}" != "True" ]; then
   exit 0
 fi
 
-until pg_isready -h db -U "$POSTGRES_USER"; do
+until pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" || pg_isready -h db -U "$POSTGRES_USER"; do
   echo "⏳ Esperando a que PostgreSQL esté disponible..."
   sleep 2
 done
