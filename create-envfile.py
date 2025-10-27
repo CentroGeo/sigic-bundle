@@ -241,6 +241,13 @@ if __name__ == "__main__":
         "--enable_keycloak_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
 
+    parser.add_argument("--kcadm_cid", help="Keycloak admin client id")
+    parser.add_argument("--kcadm_secret", help="Keycloak admin client secret")
+    parser.add_argument("--kcpub_cid", help="Keycloak public client id")
+    parser.add_argument("--kcpub_secret", help="Keycloak public client secret")
+    parser.add_argument("--adm_nuxt_auth_secret", help="Nuxt admin auth secret")
+    parser.add_argument("--pub_nuxt_auth_secret", help="Nuxt public auth secret")
+
     args = parser.parse_args()
 
     if not args.confirmation:

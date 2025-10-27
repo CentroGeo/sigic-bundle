@@ -8,5 +8,7 @@
 	url = https://github.com/CentroGeo/sigic-keycloak.git
 	branch = develop-bundle
 
-[submodule]
-	recurse = true
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/CentroGeo/sigic-nuxt-frontend.git
+	branch = develop-bundle
