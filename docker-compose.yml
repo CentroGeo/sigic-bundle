@@ -16,24 +16,6 @@ x-common-django: &default-common-django
     db:
       condition: service_healthy
 
-# Common Frontend template for all Nuxt apps
-x-common-frontend: &default-common-frontend
-  build:
-    context: ./frontend
-    dockerfile: Dockerfile
-  restart: unless-stopped
-  env_file:
-    - .env
-  expose:
-    - "3000"
-  volumes:
-    - statics:/mnt/volumes/statics
-  depends_on:
-    django:
-      condition: service_healthy
-  networks:
-    - sigicnetwork
-
 services:
   # Our custom django application. It includes Geonode.
   django:
@@ -235,10 +217,10 @@ services:
       - sigicnetwork
 
   keycloak:
-    profiles: ["oidc"]            # esto hace que sea opcional
+    profiles: ["oidc"]
     image: ${COMPOSE_PROJECT_NAME}/keycloak:latest
     build:
-      context: ./keycloak/keycloak             # aquí irá tu carpeta de keycloak
+      context: ./keycloak/keycloak
       dockerfile: Dockerfile
     container_name: keycloak4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
@@ -256,7 +238,6 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
     networks: [sigicnetwork]
-
 
   frontend-admin:
     profiles: ["frontend-admin"]
@@ -297,7 +278,6 @@ services:
     networks: [sigicnetwork]
 
   frontend-pub:
-    <<: *default-common-frontend
     profiles: ["frontend-pub"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-pub:latest
     build:
