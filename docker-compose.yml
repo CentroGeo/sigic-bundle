@@ -272,7 +272,7 @@ services:
 
   frontend-admin:
     <<: *default-common-frontend
-    profiles: ["admin"]
+    profiles: ["frontend-admin"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-admin:latest
     container_name: frontend-admin4${COMPOSE_PROJECT_NAME}
     environment:
@@ -299,7 +299,7 @@ services:
 
   frontend-pub:
     <<: *default-common-frontend
-    profiles: ["public"]
+    profiles: ["frontend-pub"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-pub:latest
     container_name: frontend-pub4${COMPOSE_PROJECT_NAME}
     environment:
