@@ -215,9 +215,11 @@ services:
 
   keycloak:
     profiles: ["oidc"]            # esto hace que sea opcional
+    image: ${COMPOSE_PROJECT_NAME}/keycloak:latest
     build:
       context: ./keycloak/keycloak             # aquí irá tu carpeta de keycloak
       dockerfile: Dockerfile
+    container_name: keycloak4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     expose:
       - "8080"
