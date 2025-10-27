@@ -12,25 +12,21 @@ DB_HOST="${DB_HOST:-db}"
 DB_PORT="${DB_PORT:-5432}"
 DB_USER="${POSTGRES_USER:-postgres}"
 
-# Esperar hasta que el puerto esté disponible
+# Esperar hasta que PostgreSQL responda
 until (echo > /dev/tcp/$DB_HOST/$DB_PORT) >/dev/null 2>&1; do
   echo "⏳ Esperando a PostgreSQL (${DB_HOST}:${DB_PORT})..."
   sleep 2
 done
 
-echo "✅ PostgreSQL disponible. Creando base si no existe..."
+echo "✅ PostgreSQL disponible, verificando existencia de la base keycloak..."
 
-PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d postgres -v ON_ERROR_STOP=1 <<'EOSQL'
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'keycloak') THEN
-    RAISE NOTICE 'Creando base de datos keycloak...';
-    CREATE DATABASE keycloak OWNER postgres;
-  ELSE
-    RAISE NOTICE 'La base de datos keycloak ya existe.';
-  END IF;
-END
-$$;
-EOSQL
+EXISTS=$(PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='keycloak';")
 
-echo "✅ Base de datos Keycloak verificada."
+if [ "$EXISTS" != "1" ]; then
+  echo "🆕 Creando base de datos 'keycloak'..."
+  PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c "CREATE DATABASE keycloak OWNER $DB_USER;"
+else
+  echo "✅ Base de datos 'keycloak' ya existe, omitiendo creación."
+fi
+
+echo "✅ Finalizado correctamente."
