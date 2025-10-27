@@ -191,8 +191,7 @@ services:
       test: "pg_isready -d postgres -U postgres"
     ports:
       - "5432:5432"
-    networks:
-      - sigicnetwork
+    networks: [sigicnetwork]
 
   # Vanilla RabbitMQ service. This is needed by celery
   rabbitmq:
