@@ -74,7 +74,7 @@ services:
       - nginx-confd:/etc/nginx
       - nginx-certificates:/geonode-certificates
       - statics:/mnt/volumes/statics
-      - ${ENABLE_KEYCLOAK_PROXY:+./overrides/nginx/keycloak-proxy.conf.envsubst:/etc/nginx/sites-enabled/keycloak-proxy.conf.envsubst:ro}
+      - ${ENABLE_KEYCLOAK_PROXY:+./overrides/nginx/keycloak-proxy.conf:/etc/nginx/sites-enabled/keycloak-proxy.conf:ro}
     restart: unless-stopped
     networks:
       - sigicnetwork
