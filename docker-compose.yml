@@ -214,7 +214,7 @@ services:
     env_file:
       - .env
     depends_on:
-      - init-db-keycloak
+      - db
     volumes:
       - keycloak_data:/opt/keycloak/data
     networks: [sigicnetwork]
