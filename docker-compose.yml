@@ -33,18 +33,6 @@ x-common-frontend: &default-common-frontend
       condition: service_healthy
   networks:
     - sigicnetwork
-  environment:
-    NODE_ENV: production
-    NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
-    NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
-    NUXT_PUBLIC_GEONODE_API: ${NGINX_BASE_URL}/api/v2
-    NUXT_PUBLIC_GEOSERVER_URL: ${NGINX_BASE_URL}/gs
-    NUXT_PUBLIC_IA_BACKEND_URL: ${NGINX_BASE_URL}/llmb
-    NUXT_PUBLIC_DEFAULT_PAGE: /
-    NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ""
-    NUXT_AUTH_ORIGIN: ${NGINX_BASE_URL}
-    NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/iam
-    KEYCLOAK_ISSUER: ${NGINX_BASE_URL}/iam/realms/sigic
 
 services:
   # Our custom django application. It includes Geonode.
@@ -271,10 +259,20 @@ services:
 
 
   frontend-admin:
-    <<: *default-common-frontend
     profiles: ["frontend-admin"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-admin:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: frontend-admin4${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "3000"
+    depends_on:
+      django:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
@@ -296,12 +294,24 @@ services:
       KEYCLOAK_CLIENT_SECRET: ${ADMIN_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${ADMIN_NUXT_AUTH_SECRET}
       NUXT_PUBLIC_APP_BASE_PATH: /admin/
+    networks: [sigicnetwork]
 
   frontend-pub:
     <<: *default-common-frontend
     profiles: ["frontend-pub"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-pub:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: frontend-pub4${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "3000"
+    depends_on:
+      django:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
@@ -323,6 +333,7 @@ services:
       KEYCLOAK_CLIENT_SECRET: ${PUB_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${PUB_NUXT_AUTH_SECRET}
       NUXT_PUBLIC_APP_BASE_PATH: /pub/
+    networks: [sigicnetwork]
 
 networks:
   sigicnetwork:
