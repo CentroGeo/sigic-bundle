@@ -2,3 +2,8 @@
 	path = geonode
 	url = https://github.com/CentroGeo/sigic-geonode-wrapper.git
 	branch = develop-bundle
+
+[submodule "keycloak"]
+	path = keycloak
+	url = https://github.com/CentroGeo/sigic-keycloak.git
+	branch = develop-bundle
