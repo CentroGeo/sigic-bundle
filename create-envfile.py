@@ -94,6 +94,16 @@ def generate_env_file(args):
             True if enable_keycloak_proxy else False
         )
 
+        enable_admin_proxy = _jsfile.get("enable_admin_proxy", args.enable_admin_proxy)
+        _vals_to_replace["enable_admin_proxy"] = (
+            True if enable_admin_proxy else False
+        )
+
+        enable_public_proxy = _jsfile.get("enable_public_proxy", args.enable_public_proxy)
+        _vals_to_replace["enable_public_proxy"] = (
+            True if enable_public_proxy else False
+        )
+
         oidc_provider_url = _jsfile.get("oidc_provider_url", args.oidc_provider_url)
         _vals_to_replace["oidc_enabled"] = (
             True if oidc_provider_url and oidc_provider_url != "" else False
@@ -239,6 +249,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--enable_keycloak_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
+    )
+
+    parser.add_argument(
+        "--enable_admin_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
+    )
+
+    parser.add_argument(
+        "--enable_public_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
 
     parser.add_argument("--kcadm_cid", help="Keycloak admin client id")
