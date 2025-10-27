@@ -226,6 +226,9 @@ services:
     depends_on:
       init-keycloak-db:
         condition: service_completed_successfully
+    environment:
+      KC_CACHE: local
+      KC_CACHE_STACK: embedded
     volumes:
       - keycloak_data:/opt/keycloak/data
     networks: [sigicnetwork]
