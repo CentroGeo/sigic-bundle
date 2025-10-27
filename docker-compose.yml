@@ -202,8 +202,8 @@ services:
   keycloak:
     profiles: ["oidc"]            # esto hace que sea opcional
     build:
-      context: ./keycloak             # aquí irá tu carpeta de keycloak
-      dockerfile: keycloak/Dockerfile
+      context: ./keycloak/keycloak             # aquí irá tu carpeta de keycloak
+      dockerfile: Dockerfile
     restart: unless-stopped
     expose:
       - "8080"
