@@ -228,7 +228,8 @@ services:
         condition: service_completed_successfully
     environment:
       KC_CACHE: local
-      KC_CACHE_STACK: embedded
+      JGROUPS_DISCOVERY_PROTOCOL: DNS_PING
+      JGROUPS_DISCOVERY_PROPERTIES: "dns_query=localhost"
     volumes:
       - keycloak_data:/opt/keycloak/data
     networks: [sigicnetwork]
