@@ -89,6 +89,11 @@ def generate_env_file(args):
             else "http"
         )
 
+        enable_keycloak_proxy = _jsfile.get("enable_keycloak_proxy", args.enable_keycloak_proxy)
+        _vals_to_replace["enable_keycloak_proxy"] = (
+            True if enable_keycloak_proxy else False
+        )
+
         oidc_provider_url = _jsfile.get("oidc_provider_url", args.oidc_provider_url)
         _vals_to_replace["oidc_enabled"] = (
             True if oidc_provider_url and oidc_provider_url != "" else False
@@ -231,6 +236,9 @@ if __name__ == "__main__":
         "--oidc_provider_url",
         help="OIDC Provider URL",
         default=None,
+    )
+    parser.add_argument(
+        "--enable_keycloak_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
 
     args = parser.parse_args()
