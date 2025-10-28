@@ -24,6 +24,7 @@ import logging
 import os
 import random
 import re
+import secrets
 import string
 import sys
 
@@ -153,6 +154,8 @@ def generate_env_file(args):
 
         if tcp == "https" and not _vals_to_replace["email"]:
             raise Exception("With HTTPS enabled, the email parameter is required")
+
+        _vals_to_replace["ia_django_secret_key"] = secrets.token_urlsafe(50)
 
         return {**_jsfile, **_vals_to_replace}
 
