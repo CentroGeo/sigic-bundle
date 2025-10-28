@@ -53,7 +53,6 @@ services:
 
   # Nginx is serving django static and media files and proxies to django and geonode
   geonode:
-    profiles: ["proxy"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/nginx:${NGINX_BASE_IMAGE_VERSION}
     build:
@@ -98,7 +97,6 @@ services:
 
   # Gets and installs letsencrypt certificates
   letsencrypt:
-    profiles: ["proxy"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/letsencrypt:${LETSENCRYPT_BASE_IMAGE_VERSION}
     build:
