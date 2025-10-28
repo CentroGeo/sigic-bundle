@@ -247,6 +247,7 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_ENV: production
+        IS_NUXT_SUBMODULE: true
         NUXT_PUBLIC_APP_BASE_PATH: /admin/
         NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/admin/api/auth
         NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
@@ -287,6 +288,7 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_ENV: production
+        IS_NUXT_SUBMODULE: true
         NUXT_PUBLIC_APP_BASE_PATH: /pub/
         NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/pub/api/auth
         NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
