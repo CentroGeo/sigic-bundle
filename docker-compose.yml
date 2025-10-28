@@ -253,9 +253,6 @@ services:
       - .env
     expose:
       - "3000"
-    depends_on:
-      django:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
@@ -291,9 +288,6 @@ services:
       - .env
     expose:
       - "3000"
-    depends_on:
-      django:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
