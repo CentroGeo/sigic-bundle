@@ -12,3 +12,13 @@
 	path = frontend
 	url = https://github.com/CentroGeo/sigic-nuxt-frontend.git
 	branch = develop-bundle
+
+[submodule "ia-engine"]
+	path = ia-engine
+	url = https://github.com/CentroGeo/sigic-ia-engine.git
+	branch = develop-bundle
+
+[submodule "ia-queuelb"]
+	path = ia-queuelb
+	url = https://github.com/CentroGeo/sigic-ia-loadbalancer.git
+	branch = develop-bundle
