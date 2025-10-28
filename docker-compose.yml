@@ -245,6 +245,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+        NUXT_PUBLIC_APP_BASE_PATH: /admin/
+        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/admin/api/auth
+        NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
     container_name: frontend-admin4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
@@ -280,6 +285,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+        NUXT_PUBLIC_APP_BASE_PATH: /pub/
+        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/pub/api/auth
+        NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
     container_name: frontend-pub4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
