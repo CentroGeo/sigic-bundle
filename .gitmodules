@@ -18,7 +18,7 @@
 	url = https://github.com/CentroGeo/sigic-ia-engine.git
 	branch = develop-bundle
 
-[submodule "ia-queuelb"]
-	path = ia-queuelb
+[submodule "ia-lb"]
+	path = ia-lb
 	url = https://github.com/CentroGeo/sigic-ia-loadbalancer.git
 	branch = develop-bundle
