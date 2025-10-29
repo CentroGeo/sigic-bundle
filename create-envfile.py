@@ -95,19 +95,19 @@ def generate_env_file(args):
             True if enable_keycloak_proxy else False
         )
 
-        enable_admin_proxy = _jsfile.get("enable_admin_proxy", args.enable_admin_proxy)
-        _vals_to_replace["enable_admin_proxy"] = (
-            True if enable_admin_proxy else False
+        usefeadmin = _jsfile.get("usefeadmin", args.usefeadmin)
+        _vals_to_replace["usefeadmin"] = (
+            True if usefeadmin else False
         )
 
-        enable_public_proxy = _jsfile.get("enable_public_proxy", args.enable_public_proxy)
-        _vals_to_replace["enable_public_proxy"] = (
-            True if enable_public_proxy else False
+        usefepub = _jsfile.get("usefepub", args.usefepub)
+        _vals_to_replace["usefepub"] = (
+            True if usefepub else False
         )
 
-        enable_ia_proxy = _jsfile.get("enable_ia_proxy", args.enable_ia_proxy)
-        _vals_to_replace["enable_ia_proxy"] = (
-            True if enable_ia_proxy else False
+        usellm = _jsfile.get("usellm", args.usellm)
+        _vals_to_replace["usellm"] = (
+            True if usellm else False
         )
 
         oidc_provider_url = _jsfile.get("oidc_provider_url", args.oidc_provider_url)
@@ -133,12 +133,11 @@ def generate_env_file(args):
             f"{subpath}/static/" if subpath else "/static/"
         )
 
-        _vals_to_replace[
-            "siteurl"
-        ] = f"{tcp}://{_jsfile.get('hostname', args.hostname)}{subpath}"
-        _vals_to_replace[
-            "nginxbaseurl"
-        ] = f"{tcp}://{_jsfile.get('hostname', args.hostname)}"
+        _vals_to_replace["siteurl"] = f"{tcp}://{_jsfile.get('hostname', args.hostname)}{subpath}"
+
+        nginxproto = "https" if args.externalhttps else tcp
+
+        _vals_to_replace["nginxbaseurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}"
 
         _vals_to_replace["secret_key"] = _jsfile.get(
             "secret_key", args.secret_key
@@ -260,14 +259,17 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--enable_admin_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usefeadmin", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
 
     parser.add_argument(
-        "--enable_public_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usefepub", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
     parser.add_argument(
-        "--enable_ia_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usellm", action="store_true", default=False, help="If provided, bundled keycloak is used"
+    )
+    parser.add_argument(
+        "--externalhttps", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
 
     parser.add_argument("--kcadm_cid", help="Keycloak admin client id")
