@@ -193,6 +193,7 @@ services:
 
   # Extra initialization for Keycloak database objects
   init-keycloak-db:
+    profiles: ["oidc"]
     image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
@@ -203,10 +204,26 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       ENABLE_KEYCLOAK_PROXY: ${ENABLE_KEYCLOAK_PROXY}
     volumes:
-      - ./scripts/init_keycloak_db.sh:/init-keycloak-db.sh:ro
-    entrypoint: ["/bin/bash", "/init-keycloak-db.sh"]
+      - ./scripts/init_keycloak_db.sh:/init_keycloak_db.sh:ro
+    entrypoint: ["/bin/bash", "/init_keycloak_db.sh"]
     restart: "no"
-    profiles: ["oidc"]
+
+  # Extra initialization for Keycloak database objects
+  init-ia-db:
+    profiles: [ "llm" ]
+    image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sigicnetwork
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      ENABLE_KEYCLOAK_PROXY: ${ENABLE_KEYCLOAK_PROXY}
+    volumes:
+      - ./scripts/init_ia_db.sh:/init_ia_db.sh:ro
+    entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
+    restart: "no"
 
   # Vanilla RabbitMQ service. This is needed by celery
   rabbitmq:
