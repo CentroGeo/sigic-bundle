@@ -276,6 +276,7 @@ if __name__ == "__main__":
     parser.add_argument("--kcpub_secret", help="Keycloak public client secret")
     parser.add_argument("--adm_nuxt_auth_secret", help="Nuxt admin auth secret")
     parser.add_argument("--pub_nuxt_auth_secret", help="Nuxt public auth secret")
+    parser.add_argument("--ia_db_password", help="IA engine database password")
 
     args = parser.parse_args()
 
