@@ -76,7 +76,6 @@ services:
       - ${ENABLE_ADMIN_PROXY:+./overrides/nginx/z-frontend-admin.conf:/etc/nginx/sites-enabled/z-frontend-admin.conf:ro}
       - ${ENABLE_PUBLIC_PROXY:+./overrides/nginx/z-frontend-pub.conf:/etc/nginx/sites-enabled/z-frontend-pub.conf:ro}
       - ${ENABLE_IA_PROXY:+./overrides/nginx/z-ia-proxy.conf:/etc/nginx/sites-enabled/z-ia-proxy.conf:ro}
-      - ${ENABLE_IA_PROXY:+./overrides/nginx/auth.lua:/usr/local/openresty/lualib/auth.lua:ro}
 
     restart: unless-stopped
     networks:
@@ -402,6 +401,7 @@ services:
       dockerfile: Dockerfile
     container_name: ia-lb4${COMPOSE_PROJECT_NAME}
     depends_on:
+      - ia-engine
       - ia-queue
     expose:
       - "80"
