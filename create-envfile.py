@@ -133,10 +133,9 @@ def generate_env_file(args):
             f"{subpath}/static/" if subpath else "/static/"
         )
 
-        _vals_to_replace["siteurl"] = f"{tcp}://{_jsfile.get('hostname', args.hostname)}{subpath}"
-
         nginxproto = "https" if args.externalhttps else tcp
 
+        _vals_to_replace["siteurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}{subpath}"
         _vals_to_replace["nginxbaseurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}"
 
         _vals_to_replace["secret_key"] = _jsfile.get(
