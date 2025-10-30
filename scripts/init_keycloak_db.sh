@@ -3,8 +3,8 @@ set -e
 
 echo "🔍 Verificando base de datos Keycloak..."
 
-if [ "${ENABLE_KEYCLOAK_PROXY}" != "True" ]; then
-  echo "🟡 ENABLE_KEYCLOAK_PROXY=False, no se creará la base."
+if [ "${ENABLE_OIDC_PROXY}" != "True" ]; then
+  echo "🟡 ENABLE_OIDC_PROXY=False, no se creará la base."
   exit 0
 fi
 

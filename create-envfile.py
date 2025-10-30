@@ -100,9 +100,9 @@ def generate_env_file(args):
             True if usefeadmin else False
         )
 
-        usefepub = _jsfile.get("usefepub", args.usefepub)
-        _vals_to_replace["usefepub"] = (
-            True if usefepub else False
+        usefeapp = _jsfile.get("usefeapp", args.usefeapp)
+        _vals_to_replace["usefeapp"] = (
+            True if usefeapp else False
         )
 
         usellm = _jsfile.get("usellm", args.usellm)
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--usefepub", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usefeapp", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
     parser.add_argument(
         "--usellm", action="store_true", default=False, help="If provided, bundled keycloak is used"
@@ -273,10 +273,10 @@ if __name__ == "__main__":
 
     parser.add_argument("--kcadm_cid", help="Keycloak admin client id")
     parser.add_argument("--kcadm_secret", help="Keycloak admin client secret")
-    parser.add_argument("--kcpub_cid", help="Keycloak public client id")
-    parser.add_argument("--kcpub_secret", help="Keycloak public client secret")
+    parser.add_argument("--kcapp_cid", help="Keycloak public app client id")
+    parser.add_argument("--kcapp_secret", help="Keycloak public app client secret")
     parser.add_argument("--adm_nuxt_auth_secret", help="Nuxt admin auth secret")
-    parser.add_argument("--pub_nuxt_auth_secret", help="Nuxt public auth secret")
+    parser.add_argument("--app_nuxt_auth_secret", help="Nuxt public auth secret")
     parser.add_argument("--ia_db_password", help="IA engine database password")
 
     args = parser.parse_args()

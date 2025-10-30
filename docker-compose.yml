@@ -72,9 +72,9 @@ services:
       - nginx-confd:/etc/nginx
       - nginx-certificates:/geonode-certificates
       - statics:/mnt/volumes/statics
-      - ${ENABLE_KEYCLOAK_PROXY:+./overrides/nginx/z-keycloak-proxy.conf:/etc/nginx/sites-enabled/z-keycloak-proxy.conf:ro}
+      - ${ENABLE_OIDC_PROXY:+./overrides/nginx/z-keycloak-proxy.conf:/etc/nginx/sites-enabled/z-keycloak-proxy.conf:ro}
       - ${ENABLE_ADMIN_PROXY:+./overrides/nginx/z-frontend-admin.conf:/etc/nginx/sites-enabled/z-frontend-admin.conf:ro}
-      - ${ENABLE_PUBLIC_PROXY:+./overrides/nginx/z-frontend-pub.conf:/etc/nginx/sites-enabled/z-frontend-pub.conf:ro}
+      - ${ENABLE_APP_PROXY:+./overrides/nginx/z-frontend-app.conf:/etc/nginx/sites-enabled/z-frontend-app.conf:ro}
       - ${ENABLE_IA_PROXY:+./overrides/nginx/z-ia-proxy.conf:/etc/nginx/sites-enabled/z-ia-proxy.conf:ro}
 
     restart: unless-stopped
@@ -201,7 +201,7 @@ services:
       - sigicnetwork
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      ENABLE_KEYCLOAK_PROXY: ${ENABLE_KEYCLOAK_PROXY}
+      ENABLE_OIDC_PROXY: ${ENABLE_OIDC_PROXY}
     volumes:
       - ./scripts/init_keycloak_db.sh:/init_keycloak_db.sh:ro
     entrypoint: ["/bin/bash", "/init_keycloak_db.sh"]
@@ -218,7 +218,7 @@ services:
       - sigicnetwork
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      ENABLE_KEYCLOAK_PROXY: ${ENABLE_KEYCLOAK_PROXY}
+      ENABLE_OIDC_PROXY: ${ENABLE_OIDC_PROXY}
     volumes:
       - ./scripts/init_ia_db.sh:/init_ia_db.sh:ro
     entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
@@ -300,19 +300,19 @@ services:
       NUXT_PUBLIC_APP_BASE_PATH: /admin/
     networks: [sigicnetwork]
 
-  frontend-pub:
-    profiles: ["frontend-pub"]
-    image: ${COMPOSE_PROJECT_NAME}/frontend-pub:latest
+  frontend-app:
+    profiles: ["frontend-app"]
+    image: ${COMPOSE_PROJECT_NAME}/frontend-app:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         NODE_ENV: production
         IS_NUXT_SUBMODULE: true
-        NUXT_PUBLIC_APP_BASE_PATH: /pub/
-        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/pub/api/auth
+        NUXT_PUBLIC_APP_BASE_PATH: /app/
+        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/app/api/auth
         NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
-    container_name: fendpub4${COMPOSE_PROJECT_NAME}
+    container_name: fendapp4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
       - .env
@@ -330,17 +330,17 @@ services:
       NUXT_PUBLIC_DEFAULT_PAGE: /
       NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ''
       NUXT_AUTH_ORIGIN: ${NUXT_AUTH_ORIGIN}
-      NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/pub/api/auth
+      NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/app/api/auth
       KEYCLOAK_ISSUER: ${NGINX_BASE_URL}/iam/realms/sigic
       NUXT_PUBLIC_ENABLE_AUTH: false
       NUXT_PUBLIC_ENABLE_CATALOGO_VISTA: false
       NUXT_PUBLIC_ENABLE_CATALOGO_CARGA: false
       NUXT_PUBLIC_ENABLE_CONSULTA: true
       NUXT_PUBLIC_ENABLE_IAA: false
-      KEYCLOAK_CLIENT_ID: ${PUB_KEYCLOAK_CLIENT_ID}
-      KEYCLOAK_CLIENT_SECRET: ${PUB_KEYCLOAK_CLIENT_SECRET}
-      NUXT_AUTH_SECRET: ${PUB_NUXT_AUTH_SECRET}
-      NUXT_PUBLIC_APP_BASE_PATH: /pub/
+      KEYCLOAK_CLIENT_ID: ${APP_KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${APP_KEYCLOAK_CLIENT_SECRET}
+      NUXT_AUTH_SECRET: ${APP_NUXT_AUTH_SECRET}
+      NUXT_PUBLIC_APP_BASE_PATH: /app/
     networks: [sigicnetwork]
 
   redis:
