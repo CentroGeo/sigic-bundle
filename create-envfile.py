@@ -154,7 +154,7 @@ def generate_env_file(args):
             else True
         )
         _vals_to_replace["email"] = _jsfile.get("email", args.email)
-        _vals_to_replace["defaulthomepath"] = _jsfile.get("defaulthomepath", args.defaulthomepath)
+        _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath)
 
         if tcp == "https" and not _vals_to_replace["email"]:
             raise Exception("With HTTPS enabled, the email parameter is required")
@@ -164,7 +164,7 @@ def generate_env_file(args):
         return {**_jsfile, **_vals_to_replace}
 
     for key, val in _get_vals_to_replace(args).items():
-        if key in ["subpath", "defaulthomepath"]:
+        if key in ["subpath", "homepath"]:
             _val = "" if not val else str(val)
         else:
             _val = val or "".join(random.choice(_simple_chars) for _ in range(15))
@@ -229,7 +229,7 @@ if __name__ == "__main__":
         "--email", help="Admin email, this field is required if https is enabled"
     )
     parser.add_argument(
-        "--defaulthomepath", help="Default home path"
+        "--homepath", help="Default home path"
     )
 
     parser.add_argument("--geonodepwd", help="GeoNode admin password")
