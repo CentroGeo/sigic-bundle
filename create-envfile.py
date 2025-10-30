@@ -90,9 +90,9 @@ def generate_env_file(args):
             else "http"
         )
 
-        enable_keycloak_proxy = _jsfile.get("enable_keycloak_proxy", args.enable_keycloak_proxy)
-        _vals_to_replace["enable_keycloak_proxy"] = (
-            True if enable_keycloak_proxy else False
+        useoidc = _jsfile.get("useoidc", args.useoidc)
+        _vals_to_replace["useoidc"] = (
+            True if useoidc else False
         )
 
         usefeadmin = _jsfile.get("usefeadmin", args.usefeadmin)
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         default=None,
     )
     parser.add_argument(
-        "--enable_keycloak_proxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--useoidc", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
 
     parser.add_argument(
