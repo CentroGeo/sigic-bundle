@@ -218,7 +218,7 @@ services:
       - sigicnetwork
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      ENABLE_OIDC_PROXY: ${ENABLE_OIDC_PROXY}
+      ENABLE_IA_PROXY: ${ENABLE_IA_PROXY}
     volumes:
       - ./scripts/init_ia_db.sh:/init_ia_db.sh:ro
     entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
