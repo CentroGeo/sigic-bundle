@@ -395,6 +395,8 @@ services:
       BALANCER_HOST: host.docker.internal
       BALANCER_PORT: 80
       PROXY_BASE_URL: ${NGINX_BASE_URL}
+      OLLAMA_HOST: ${OLLAMA_HOST:-ollama}
+      OLLAMA_PORT: ${OLLAMA_PORT:-11434}
     networks: [sigicnetwork]
 
   ia-lb:
@@ -412,6 +414,35 @@ services:
     expose:
       - "80"
     networks: [sigicnetwork]
+
+  # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
+  ollama:
+    profiles: [ "llm-ollama" ]
+    image: ollama/ollama
+    container_name: ollama4${COMPOSE_PROJECT_NAME}
+    expose:
+      - "11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]   # se ignora si no hay GPU disponible
+    environment:
+      OLLAMA_KEEP_ALIVE: "5m"
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:latest}
+    networks:
+      - sigicnetwork
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "
+        echo 'Starting Ollama with model ${OLLAMA_MODEL}...';
+        ollama serve &
+        sleep 5 &&
+        ollama pull ${OLLAMA_MODEL} &&
+        wait
+      "
 
 networks:
   sigicnetwork:
@@ -444,3 +475,5 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME}-rabbitmq
   uploaded-ia:
     name: ${COMPOSE_PROJECT_NAME}-statics-uploaded-ia
+  ollama-data:
+    name: ${COMPOSE_PROJECT_NAME}-ollama_data
