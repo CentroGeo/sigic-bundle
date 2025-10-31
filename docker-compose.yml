@@ -407,6 +407,8 @@ services:
     depends_on:
       - ia-engine
       - ia-queue
+    ports:
+      - "81:80"
     expose:
       - "80"
     networks: [sigicnetwork]
