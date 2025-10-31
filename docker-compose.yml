@@ -359,9 +359,9 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_ENV: prod
-    container_name: iaengine4${COMPOSE_PROJECT_NAME}
+    container_name: ia-engine4${COMPOSE_PROJECT_NAME}
     expose:
-      - "8000"
+      - "8001"
     depends_on:
       - db
     environment:
