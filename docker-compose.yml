@@ -450,10 +450,24 @@ services:
         fi;
 
         MODEL="${OLLAMA_MODEL:-deepseek-r1:latest}";
+        if [ -z "$MODEL" ]; then
+          MODEL="deepseek-r1:latest";
+        fi;
+
         echo "🚀 Iniciando Ollama con modelo $MODEL...";
         ollama serve &
-        sleep 5 &&
-        ollama pull "$MODEL" &&
+
+        # Espera a que el servidor esté listo antes de hacer el pull
+        for i in $(seq 1 10); do
+          if curl -sf http://127.0.0.1:11434/api/version >/dev/null; then
+            break;
+          fi;
+          echo "⏳ Esperando que Ollama esté listo... ($i)";
+          sleep 2;
+        done;
+
+        echo "⬇️  Descargando modelo $MODEL...";
+        ollama pull "$MODEL" || echo "⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)";
         wait
       '
 
