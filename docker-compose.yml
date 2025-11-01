@@ -439,21 +439,23 @@ services:
     restart: unless-stopped
     # Intenta usar GPU si está disponible; si no, sigue en CPU
     entrypoint: >
-      sh -c "
-        echo '🔍 Verificando GPU disponible...';
+      sh -c '
+        echo "🔍 Verificando GPU disponible...";
         if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
-          echo '✅ GPU NVIDIA detectada, ejecutando con soporte GPU';
+          echo "✅ GPU NVIDIA detectada, ejecutando con soporte GPU";
           export OLLAMA_USE_GPU=1;
         else
-          echo '⚠️  No hay GPU disponible, ejecutando en modo CPU';
+          echo "⚠️  No hay GPU disponible, ejecutando en modo CPU";
           export OLLAMA_USE_GPU=0;
         fi;
-        echo '🚀 Iniciando Ollama con modelo ${OLLAMA_MODEL}...';
+
+        MODEL="${OLLAMA_MODEL:-deepseek-r1:latest}";
+        echo "🚀 Iniciando Ollama con modelo $MODEL...";
         ollama serve &
         sleep 5 &&
-        ollama pull ${OLLAMA_MODEL} &&
+        ollama pull "$MODEL" &&
         wait
-      "
+      '
 
 networks:
   sigicnetwork:
