@@ -417,7 +417,7 @@ services:
 
   # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
   ollama:
-    profiles: [ "llm-ollama" ]
+    profiles: ["llm-ollama", "llm"]
     image: ollama/ollama
     container_name: ollama4${COMPOSE_PROJECT_NAME}
     ports:
