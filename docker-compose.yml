@@ -449,12 +449,7 @@ services:
           export OLLAMA_USE_GPU=0
         fi
       
-        MODEL="${OLLAMA_MODEL:-deepseek-r1:latest}"
-        if [ -z "$MODEL" ]; then
-          MODEL="deepseek-r1:latest"
-        fi
-      
-        echo "🚀 Iniciando Ollama con modelo $MODEL..."
+        echo "🚀 Iniciando Ollama con modelo $OLLAMA_MODEL..."
         ollama serve &
       
         echo "⏳ Esperando que Ollama esté listo..."
@@ -466,8 +461,8 @@ services:
           echo "..."
         done
       
-        echo "⬇️  Descargando modelo $MODEL..."
-        ollama pull "$MODEL" || echo "⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)"
+        echo "⬇️  Descargando modelo $OLLAMA_MODEL..."
+        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)"
         wait
       '
 
