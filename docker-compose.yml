@@ -438,37 +438,38 @@ services:
       - sigicnetwork
     restart: unless-stopped
     # Intenta usar GPU si está disponible; si no, sigue en CPU
-    entrypoint: >
-      sh -c "
-        echo '🔍 Verificando GPU disponible...';
+    entrypoint: |
+      sh -eu -c '
+        echo "🔍 Verificando GPU disponible..."
         if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
-          echo '✅ GPU NVIDIA detectada, ejecutando con soporte GPU';
-          export OLLAMA_USE_GPU=1;
+          echo "✅ GPU NVIDIA detectada, ejecutando con soporte GPU"
+          export OLLAMA_USE_GPU=1
         else
-          echo '⚠️  No hay GPU disponible, ejecutando en modo CPU';
-          export OLLAMA_USE_GPU=0;
-        fi;
+          echo "⚠️  No hay GPU disponible, ejecutando en modo CPU"
+          export OLLAMA_USE_GPU=0
+        fi
       
-        # Valor por defecto del modelo
-        MODEL=\${OLLAMA_MODEL:-deepseek-r1:latest};
-        if [ -z \"\$MODEL\" ]; then
-          MODEL=deepseek-r1:latest;
-        fi;
+        MODEL="${OLLAMA_MODEL:-deepseek-r1:latest}"
+        if [ -z "$MODEL" ]; then
+          MODEL="deepseek-r1:latest"
+        fi
       
-        echo '🚀 Iniciando Ollama con modelo '\$MODEL'...';
+        echo "🚀 Iniciando Ollama con modelo $MODEL..."
         ollama serve &
       
-        # Esperar a que Ollama abra el puerto 11434
-        echo '⏳ Esperando que Ollama esté listo...';
-        for i in \$(seq 1 15); do
-          nc -z 127.0.0.1 11434 && break || sleep 2;
-          echo '...';
-        done;
+        echo "⏳ Esperando que Ollama esté listo..."
+        for i in $(seq 1 15); do
+          if nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
+            break
+          fi
+          sleep 2
+          echo "..."
+        done
       
-        echo '⬇️  Descargando modelo '\$MODEL'...';
-        ollama pull \"\$MODEL\" || echo '⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)';
+        echo "⬇️  Descargando modelo $MODEL..."
+        ollama pull "$MODEL" || echo "⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)"
         wait
-      "
+      '
 
 networks:
   sigicnetwork:
