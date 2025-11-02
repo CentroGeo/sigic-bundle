@@ -417,6 +417,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       OIDC_CONFIG_URL: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/.well-known/openid-configuration
+      NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
     # volumes:
     #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
@@ -471,6 +472,8 @@ services:
         ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)"
         wait
       '
+
+
 
 networks:
   sigicnetwork:
