@@ -417,7 +417,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       OIDC_CONFIG_URL: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/.well-known/openid-configuration
-      NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
+      NGINX_RESOLVER: ${NGINX_RESOLVER}
     # volumes:
     #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
