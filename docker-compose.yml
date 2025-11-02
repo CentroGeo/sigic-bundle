@@ -417,6 +417,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       OIDC_CONFIG_URL: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/.well-known/openid-configuration
+    # volumes:
+    #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
 
   # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
