@@ -361,7 +361,7 @@ services:
         BUILD_ENV: prod
     container_name: ia-engine4${COMPOSE_PROJECT_NAME}
     expose:
-      - "8001"
+      - "8000"
     depends_on:
       - db
     environment:
@@ -386,7 +386,7 @@ services:
       dockerfile: Dockerfile
     container_name: ia-queue4${COMPOSE_PROJECT_NAME}
     expose:
-      - "8000"
+      - "8001"
     depends_on:
       - redis
     environment:
