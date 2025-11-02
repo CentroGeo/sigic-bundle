@@ -413,6 +413,9 @@ services:
       - "81:80"
     expose:
       - "80"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks: [sigicnetwork]
 
   # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
