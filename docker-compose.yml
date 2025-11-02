@@ -401,7 +401,7 @@ services:
 
   ia-lb:
     profiles: ["llm"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-queue:latest
+    image: ${COMPOSE_PROJECT_NAME}/ia-lb:latest
     build:
       context: ./ia-lb/nginx-conf
       dockerfile: Dockerfile
