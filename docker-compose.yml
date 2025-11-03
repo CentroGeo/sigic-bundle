@@ -217,8 +217,14 @@ services:
     networks:
       - sigicnetwork
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       ENABLE_IA_PROXY: ${ENABLE_IA_PROXY}
+      DB_NAME: ${IA_DJANGO_DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: ${DATABASE_HOST}
+      DB_PORT: ${DATABASE_PORT}
+      IA_USER: ${IA_DJANGO_DB_USER:-iauser}
+      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
     volumes:
       - ./scripts/init_ia_db.sh:/init_ia_db.sh:ro
     entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
@@ -361,16 +367,18 @@ services:
         BUILD_ENV: prod
     container_name: ia-engine4${COMPOSE_PROJECT_NAME}
     expose:
-      - "8001"
+      - "8000"
     depends_on:
       - db
     environment:
       SECRET_KEY: ${IA_DJANGO_SECRET_KEY}
       DB_NAME: ${IA_DJANGO_DB_NAME}
-      DB_USER: ${IA_DJANGO_DB_USER}
-      DB_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_HOST: ${DATABASE_HOST}
       DB_PORT: ${DATABASE_PORT}
+      IA_USER: ${IA_DJANGO_DB_USER:-iauser}
+      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
       DJANGO_SETTINGS_MODULE: llm.settings.prod
       DJANGO_ENV: prod
       BUILD_ENV: prod
@@ -386,7 +394,7 @@ services:
       dockerfile: Dockerfile
     container_name: ia-queue4${COMPOSE_PROJECT_NAME}
     expose:
-      - "8000"
+      - "8001"
     depends_on:
       - redis
     environment:
@@ -401,7 +409,7 @@ services:
 
   ia-lb:
     profiles: ["llm"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-queue:latest
+    image: ${COMPOSE_PROJECT_NAME}/ia-lb:latest
     build:
       context: ./ia-lb/nginx-conf
       dockerfile: Dockerfile
@@ -413,36 +421,67 @@ services:
       - "81:80"
     expose:
       - "80"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OIDC_CONFIG_URL: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/.well-known/openid-configuration
+      NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
+    # volumes:
+    #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
 
   # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
   ollama:
-    profiles: [ "llm-ollama" ]
+    profiles: ["llm-ollama", "llm"]
     image: ollama/ollama
     container_name: ollama4${COMPOSE_PROJECT_NAME}
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
     expose:
-      - "11434"
+      - "${OLLAMA_PORT:-11434}"
     volumes:
       - ollama-data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [ gpu ]   # se ignora si no hay GPU disponible
+      # Monta el dispositivo NVIDIA solo si existe (evita error en hosts sin GPU)
+      - /dev:/dev
     environment:
       OLLAMA_KEEP_ALIVE: "5m"
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:latest}
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
+      OLLAMA_PROTO: ${OLLAMA_PROTO:-http}
+      OLLAMA_HOST: ${OLLAMA_HOST:-ollama}
+      OLLAMA_PORT: ${OLLAMA_PORT:-11434}
     networks:
       - sigicnetwork
     restart: unless-stopped
-    entrypoint: >
-      sh -c "
-        echo 'Starting Ollama with model ${OLLAMA_MODEL}...';
+    # Intenta usar GPU si está disponible; si no, sigue en CPU
+    entrypoint: |
+      sh -eu -c '
+        echo "🔍 Verificando GPU disponible..."
+        if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
+          echo "✅ GPU NVIDIA detectada, ejecutando con soporte GPU"
+          export OLLAMA_USE_GPU=1
+        else
+          echo "⚠️  No hay GPU disponible, ejecutando en modo CPU"
+          export OLLAMA_USE_GPU=0
+        fi
+      
+        echo "🚀 Iniciando Ollama con modelo $OLLAMA_MODEL..."
         ollama serve &
-        sleep 5 &&
-        ollama pull ${OLLAMA_MODEL} &&
+      
+        echo "⏳ Esperando que Ollama esté listo..."
+        for i in $(seq 1 15); do
+          if nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
+            break
+          fi
+          sleep 2
+          echo "..."
+        done
+      
+        echo "⬇️  Descargando modelo $OLLAMA_MODEL..."
+        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)"
         wait
-      "
+      '
+
+
 
 networks:
   sigicnetwork:
