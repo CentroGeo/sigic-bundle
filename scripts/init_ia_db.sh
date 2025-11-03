@@ -31,7 +31,8 @@ if [ "$EXISTS_USER" != "1" ]; then
   echo "🆕 Creando usuario '${IA_USER}'..."
   PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c "CREATE USER ${IA_USER} WITH PASSWORD '${IA_PASSWORD}';"
 else
-  echo "✅ Usuario '${IA_USER}' ya existe."
+  echo "🔁 Usuario '${IA_USER}' ya existe, actualizando contraseña..."
+  PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c "ALTER USER ${IA_USER} WITH PASSWORD '${IA_PASSWORD}';"
 fi
 
 if [ "$EXISTS_DB" != "1" ]; then
