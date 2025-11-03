@@ -13,8 +13,8 @@ DB_PORT="${DB_PORT:-5432}"
 DB_USER="${DB_USER:-postgres}"
 DB_PASS="${DB_PASSWORD}"
 DB_NAME="${DB_NAME:-iadata}"
-IA_USER="${IA_DJANGO_DB_USER:-iauser}"
-IA_PASS="${IA_DJANGO_DB_PASSWORD}"
+IA_USER="${IA_USER:-iauser}"
+IA_PASSWORD="${IA_PASSWORD}"
 
 # Esperar hasta que PostgreSQL responda
 until (echo > /dev/tcp/$DB_HOST/$DB_PORT) >/dev/null 2>&1; do
@@ -29,7 +29,7 @@ EXISTS_USER=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d postgres
 
 if [ "$EXISTS_USER" != "1" ]; then
   echo "🆕 Creando usuario '${IA_USER}'..."
-  PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c "CREATE USER ${IA_USER} WITH PASSWORD '${IA_PASS}';"
+  PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c "CREATE USER ${IA_USER} WITH PASSWORD '${IA_PASSWORD}';"
 else
   echo "✅ Usuario '${IA_USER}' ya existe."
 fi

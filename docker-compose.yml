@@ -217,8 +217,14 @@ services:
     networks:
       - sigicnetwork
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       ENABLE_IA_PROXY: ${ENABLE_IA_PROXY}
+      DB_NAME: ${IA_DJANGO_DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: ${DATABASE_HOST}
+      DB_PORT: ${DATABASE_PORT}
+      IA_USER: ${IA_DJANGO_DB_USER:-iauser}
+      IA_PASS: ${IA_DJANGO_DB_PASSWORD}
     volumes:
       - ./scripts/init_ia_db.sh:/init_ia_db.sh:ro
     entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
@@ -372,7 +378,7 @@ services:
       DB_HOST: ${DATABASE_HOST}
       DB_PORT: ${DATABASE_PORT}
       IA_USER: ${IA_DJANGO_DB_USER:-iauser}
-      IA_PASS: ${IA_DJANGO_DB_PASSWORD}
+      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
       DJANGO_SETTINGS_MODULE: llm.settings.prod
       DJANGO_ENV: prod
       BUILD_ENV: prod
