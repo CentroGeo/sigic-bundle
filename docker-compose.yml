@@ -224,7 +224,7 @@ services:
       DB_HOST: ${DATABASE_HOST}
       DB_PORT: ${DATABASE_PORT}
       IA_USER: ${IA_DJANGO_DB_USER:-iauser}
-      IA_PASS: ${IA_DJANGO_DB_PASSWORD}
+      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
     volumes:
       - ./scripts/init_ia_db.sh:/init_ia_db.sh:ro
     entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
