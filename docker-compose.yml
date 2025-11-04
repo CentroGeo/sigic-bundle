@@ -456,7 +456,7 @@ services:
       OLLAMA_KEEP_ALIVE: "5m"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
       OLLAMA_PROTO: ${OLLAMA_PROTO:-http}
-      OLLAMA_HOST: ${OLLAMA_HOST:-ollama}
+      OLLAMA_HOST: "0.0.0.0"
       OLLAMA_PORT: ${OLLAMA_PORT:-11434}
     networks:
       - sigicnetwork
