@@ -489,7 +489,8 @@ services:
 
         echo "⬇️  Descargando modelo $OLLAMA_MODEL..."
         ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar automáticamente"
-
+        ollama pull nomic-embed-text || echo "⚠️ No se pudo descargar nomic-embed-text"
+      
         wait
       '
 
