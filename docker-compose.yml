@@ -194,6 +194,8 @@ services:
       test: "pg_isready -d postgres -U postgres"
     ports:
       - "5432:5432"
+    expose:
+      - "5432"
     networks: [sigicnetwork]
 
   # Extra initialization for Keycloak database objects
