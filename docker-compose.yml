@@ -466,18 +466,28 @@ services:
       sh -eu -c '
         echo "🔍 Verificando GPU disponible..."
         if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
-          echo "✅ GPU NVIDIA detectada, ejecutando con soporte GPU"
           export OLLAMA_USE_GPU=1
         else
-          echo "⚠️  No hay GPU disponible, ejecutando en modo CPU"
           export OLLAMA_USE_GPU=0
         fi
-    
-        echo "⬇️  Asegurando modelo $OLLAMA_MODEL..."
-        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar el modelo automáticamente (verifica nombre)"
-    
-        echo "🚀 Iniciando Ollama en modo servidor..."
-        exec ollama serve
+
+        echo "🚀 Iniciando servidor Ollama..."
+        ollama serve &
+
+        echo "⏳ Esperando que Ollama esté listo..."
+        for i in $(seq 1 15); do
+          if nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
+            echo "✅ Ollama listo"
+            break
+          fi
+          sleep 2
+          echo "..."
+        done
+
+        echo "⬇️  Descargando modelo $OLLAMA_MODEL..."
+        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar automáticamente"
+
+        wait
       '
 
 
