@@ -19,6 +19,7 @@ x-common-django: &default-common-django
 services:
   # Our custom django application. It includes Geonode.
   django:
+    profiles: [ "geonode" ]
     <<: *default-common-django
     build:
       context: ./geonode
@@ -39,6 +40,7 @@ services:
 
   # Celery worker that executes celery tasks created by Django.
   celery:
+    profiles: [ "geonode" ]
     <<: *default-common-django
     container_name: celery4${COMPOSE_PROJECT_NAME}
     depends_on:
@@ -83,6 +85,7 @@ services:
 
   # memcached service
   memcached:
+    profiles: [ "geonode" ]
     image: memcached:alpine
     container_name: memcached4${COMPOSE_PROJECT_NAME}
     command: memcached ${MEMCACHED_OPTIONS}
@@ -98,6 +101,7 @@ services:
 
   # Gets and installs letsencrypt certificates
   letsencrypt:
+    profiles: [ "https" ]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/letsencrypt:${LETSENCRYPT_BASE_IMAGE_VERSION}
     build:
@@ -116,6 +120,7 @@ services:
 
   # Geoserver backend
   geoserver:
+    profiles: [ "geonode" ]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/geoserver:${GEOSERVER_BASE_IMAGE_VERSION}
     build:
@@ -150,6 +155,7 @@ services:
       - sigicnetwork
 
   data-dir-conf:
+    profiles: [ "geonode" ]
     image: ${COMPOSE_PROJECT_NAME}/geoserver_data:${GEOSERVER_DATA_BASE_IMAGE_VERSION}
     platform: linux/amd64
     build:
@@ -232,6 +238,7 @@ services:
 
   # Vanilla RabbitMQ service. This is needed by celery
   rabbitmq:
+    profiles: [ "geonode" ]
     image: rabbitmq:3-alpine
     container_name: rabbitmq4${COMPOSE_PROJECT_NAME}
     volumes:
