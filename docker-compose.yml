@@ -487,8 +487,7 @@ services:
           echo "⚙️  Ejecutando en CPU"
         fi
 
-        echo "🚀 Iniciando servidor Ollama..."
-        # Inicia Ollama en segundo plano temporalmente
+        echo "🚀 Iniciando servidor Ollama temporal..."
         ollama serve &
         PID=$!
 
@@ -506,13 +505,16 @@ services:
         ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar $OLLAMA_MODEL"
         ollama pull nomic-embed-text || echo "⚠️  No se pudo descargar nomic-embed-text"
 
-        echo "🧹 Cerrando instancia temporal y reiniciando servidor principal..."
-        kill $PID
-        sleep 2
+        echo "🧹 Cerrando instancia temporal y lanzando servidor principal..."
+        if ps -p "$PID" >/dev/null 2>&1; then
+          kill "$PID"
+          sleep 2
+        fi
 
-        echo "🏁 Lanzando servidor Ollama definitivo"
+        echo "🏁 Iniciando Ollama en modo servidor"
         exec ollama serve
       '
+
 
 
 
