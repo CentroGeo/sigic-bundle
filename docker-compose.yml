@@ -313,6 +313,7 @@ services:
       KEYCLOAK_CLIENT_SECRET: ${ADMIN_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${ADMIN_NUXT_AUTH_SECRET}
       NUXT_PUBLIC_APP_BASE_PATH: /admin/
+      NUXT_PUBLIC_IA_MODEL: "${IA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
   frontend-app:
@@ -356,6 +357,7 @@ services:
       KEYCLOAK_CLIENT_SECRET: ${APP_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${APP_NUXT_AUTH_SECRET}
       NUXT_PUBLIC_APP_BASE_PATH: /app/
+      NUXT_PUBLIC_IA_MODEL: "${IA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
   redis:
