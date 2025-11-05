@@ -492,7 +492,7 @@ services:
         PID=$!
 
         echo "⏳ Esperando que Ollama esté listo..."
-        for i in $(seq 1 15); do
+        for i in $(seq 1 20); do
           if nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
             echo "✅ Ollama listo"
             break
@@ -505,10 +505,17 @@ services:
         ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar $OLLAMA_MODEL"
         ollama pull nomic-embed-text || echo "⚠️  No se pudo descargar nomic-embed-text"
 
-        echo "🧹 Cerrando instancia temporal y lanzando servidor principal..."
+        echo "🧹 Cerrando instancia temporal..."
         if ps -p "$PID" >/dev/null 2>&1; then
           kill "$PID"
-          sleep 2
+          echo "🕐 Esperando a que Ollama libere el puerto..."
+          for i in $(seq 1 10); do
+            if ! nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
+              echo "✅ Puerto libre"
+              break
+            fi
+            sleep 1
+          done
         fi
 
         echo "🏁 Iniciando Ollama en modo servidor"
