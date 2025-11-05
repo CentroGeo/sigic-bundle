@@ -474,12 +474,16 @@ services:
         echo "🔍 Verificando GPU disponible..."
         if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
           export OLLAMA_USE_GPU=1
+          echo "✅ GPU detectada"
         else
           export OLLAMA_USE_GPU=0
+          echo "⚙️  Ejecutando en CPU"
         fi
 
         echo "🚀 Iniciando servidor Ollama..."
+        # Inicia Ollama en segundo plano temporalmente
         ollama serve &
+        PID=$!
 
         echo "⏳ Esperando que Ollama esté listo..."
         for i in $(seq 1 15); do
@@ -491,11 +495,16 @@ services:
           echo "..."
         done
 
-        echo "⬇️  Descargando modelo $OLLAMA_MODEL..."
-        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar automáticamente"
-        ollama pull nomic-embed-text || echo "⚠️ No se pudo descargar nomic-embed-text"
-      
-        wait
+        echo "⬇️  Descargando modelos..."
+        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar $OLLAMA_MODEL"
+        ollama pull nomic-embed-text || echo "⚠️  No se pudo descargar nomic-embed-text"
+
+        echo "🧹 Cerrando instancia temporal y reiniciando servidor principal..."
+        kill $PID
+        sleep 2
+
+        echo "🏁 Lanzando servidor Ollama definitivo"
+        exec ollama serve
       '
 
 
