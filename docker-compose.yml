@@ -451,6 +451,11 @@ services:
   ollama:
     profiles: ["llm-ollama", "llm"]
     image: ollama/ollama
+    build:
+      context: ./ia-engine
+      dockerfile: Dockerfile.ollama
+      args:
+        OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
     container_name: ollama4${COMPOSE_PROJECT_NAME}
     ports:
       - "${OLLAMA_PORT:-11434}:11434"
@@ -472,10 +477,9 @@ services:
       resources:
         limits:
           memory: 12g
+    restart: unless-stopped
     networks:
       - sigicnetwork
-    restart: unless-stopped
-    # Intenta usar GPU si está disponible; si no, sigue en CPU
     entrypoint: |
       sh -eu -c '
         echo "🔍 Verificando GPU disponible..."
@@ -487,38 +491,7 @@ services:
           echo "⚙️  Ejecutando en CPU"
         fi
 
-        echo "🚀 Iniciando servidor Ollama temporal..."
-        ollama serve &
-        PID=$!
-
-        echo "⏳ Esperando que Ollama esté listo..."
-        for i in $(seq 1 20); do
-          if nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
-            echo "✅ Ollama listo"
-            break
-          fi
-          sleep 2
-          echo "..."
-        done
-
-        echo "⬇️  Descargando modelos..."
-        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar $OLLAMA_MODEL"
-        ollama pull nomic-embed-text || echo "⚠️  No se pudo descargar nomic-embed-text"
-
-        echo "🧹 Cerrando instancia temporal..."
-        if ps -p "$PID" >/dev/null 2>&1; then
-          kill "$PID"
-          echo "🕐 Esperando a que Ollama libere el puerto..."
-          for i in $(seq 1 10); do
-            if ! nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
-              echo "✅ Puerto libre"
-              break
-            fi
-            sleep 1
-          done
-        fi
-
-        echo "🏁 Iniciando Ollama en modo servidor"
+        echo "🏁 Iniciando servidor Ollama..."
         exec ollama serve
       '
 
