@@ -466,6 +466,7 @@ services:
       OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
       OLLAMA_HOST: "0.0.0.0"
       OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
+      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
     deploy:
       resources:
         limits:
@@ -500,7 +501,7 @@ services:
         ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar automáticamente"
         ollama pull nomic-embed-text || echo "⚠️ No se pudo descargar nomic-embed-text"
       
-        wait
+        fg %1
       '
 
 
