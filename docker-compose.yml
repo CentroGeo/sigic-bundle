@@ -313,6 +313,7 @@ services:
       KEYCLOAK_CLIENT_SECRET: ${ADMIN_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${ADMIN_NUXT_AUTH_SECRET}
       NUXT_PUBLIC_APP_BASE_PATH: /admin/
+      NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
   frontend-app:
@@ -356,6 +357,7 @@ services:
       KEYCLOAK_CLIENT_SECRET: ${APP_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${APP_NUXT_AUTH_SECRET}
       NUXT_PUBLIC_APP_BASE_PATH: /app/
+      NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
   redis:
@@ -395,6 +397,7 @@ services:
       OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
       OLLAMA_HOST: "${OLLAMA_HOST:-ollama}"
       OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
+      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
     entrypoint: sh ./scripts/entrypoint.sh
     networks: [sigicnetwork]
 
@@ -414,9 +417,11 @@ services:
       REDIS_PORT: 6379
       BALANCER_HOST: host.docker.internal
       BALANCER_PORT: 80
-      PROXY_BASE_URL: ${NGINX_BASE_URL}
+      NGINX_BASE_URL: ${NGINX_BASE_URL}
+      JOB_TIMEOUT_SECONDS: ${IA_JOB_TIMEOUT_SECONDS:-300}
       OLLAMA_HOST: ${OLLAMA_HOST:-ollama}
       OLLAMA_PORT: ${OLLAMA_PORT:-11434}
+      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
     networks: [sigicnetwork]
 
   ia-lb:
@@ -457,6 +462,8 @@ services:
       - /dev:/dev
     environment:
       OLLAMA_KEEP_ALIVE: "5m"
+      OLLAMA_FLASH_ATTENTION: "${OLLAMA_FLASH_ATTENTION:-1}"
+      OLLAMA_USE_GPU: "${OLLAMA_USE_GPU:-1}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
       OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
       OLLAMA_HOST: "0.0.0.0"
@@ -464,7 +471,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 8g
+          memory: 12g
     networks:
       - sigicnetwork
     restart: unless-stopped
