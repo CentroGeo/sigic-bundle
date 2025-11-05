@@ -466,7 +466,7 @@ services:
       # Monta el dispositivo NVIDIA solo si existe (evita error en hosts sin GPU)
       - /dev:/dev
     environment:
-      OLLAMA_KEEP_ALIVE: "5m"
+      OLLAMA_KEEP_ALIVE: "50m"
       OLLAMA_FLASH_ATTENTION: "${OLLAMA_FLASH_ATTENTION:-1}"
       OLLAMA_USE_GPU: "${OLLAMA_USE_GPU:-1}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
@@ -492,6 +492,8 @@ services:
         fi
 
         echo "🏁 Iniciando servidor Ollama..."
+        echo "🔥 Precargando modelo ${OLLAMA_MODEL}..."
+        ollama run "${OLLAMA_MODEL}" "Hola" >/dev/null 2>&1 || true
         exec ollama serve
       '
 
