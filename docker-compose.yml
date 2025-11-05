@@ -397,6 +397,7 @@ services:
       OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
       OLLAMA_HOST: "${OLLAMA_HOST:-ollama}"
       OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
+      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
     entrypoint: sh ./scripts/entrypoint.sh
     networks: [sigicnetwork]
 
