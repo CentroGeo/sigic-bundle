@@ -19,7 +19,7 @@ x-common-django: &default-common-django
 services:
   # Our custom django application. It includes Geonode.
   django:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     <<: *default-common-django
     build:
       context: ./geonode
@@ -40,7 +40,7 @@ services:
 
   # Celery worker that executes celery tasks created by Django.
   celery:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     <<: *default-common-django
     container_name: celery4${COMPOSE_PROJECT_NAME}
     depends_on:
@@ -55,6 +55,7 @@ services:
 
   # Nginx is serving django static and media files and proxies to django and geonode
   nginx:
+    profiles: ["core", "geonode"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/nginx:${NGINX_BASE_IMAGE_VERSION}
     build:
@@ -85,7 +86,7 @@ services:
 
   # memcached service
   memcached:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     image: memcached:alpine
     container_name: memcached4${COMPOSE_PROJECT_NAME}
     command: memcached ${MEMCACHED_OPTIONS}
@@ -101,7 +102,7 @@ services:
 
   # Gets and installs letsencrypt certificates
   letsencrypt:
-    profiles: [ "https" ]
+    profiles: ["https"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/letsencrypt:${LETSENCRYPT_BASE_IMAGE_VERSION}
     build:
@@ -120,7 +121,7 @@ services:
 
   # Geoserver backend
   geoserver:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/geoserver:${GEOSERVER_BASE_IMAGE_VERSION}
     build:
@@ -155,7 +156,7 @@ services:
       - sigicnetwork
 
   data-dir-conf:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     image: ${COMPOSE_PROJECT_NAME}/geoserver_data:${GEOSERVER_DATA_BASE_IMAGE_VERSION}
     platform: linux/amd64
     build:
@@ -175,6 +176,7 @@ services:
 
   # PostGIS database.
   db:
+    profiles: ["core", "geonode", "llm"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
     build:
@@ -449,8 +451,13 @@ services:
 
   # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
   ollama:
-    profiles: ["llm-ollama", "llm"]
+    profiles: ["ollama"]
     image: ollama/ollama
+    build:
+      context: ./ia-engine
+      dockerfile: Dockerfile.ollama
+      args:
+        OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
     container_name: ollama4${COMPOSE_PROJECT_NAME}
     ports:
       - "${OLLAMA_PORT:-11434}:11434"
@@ -461,7 +468,7 @@ services:
       # Monta el dispositivo NVIDIA solo si existe (evita error en hosts sin GPU)
       - /dev:/dev
     environment:
-      OLLAMA_KEEP_ALIVE: "5m"
+      OLLAMA_KEEP_ALIVE: "50m"
       OLLAMA_FLASH_ATTENTION: "${OLLAMA_FLASH_ATTENTION:-1}"
       OLLAMA_USE_GPU: "${OLLAMA_USE_GPU:-1}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
@@ -472,38 +479,26 @@ services:
       resources:
         limits:
           memory: 12g
+    restart: unless-stopped
     networks:
       - sigicnetwork
-    restart: unless-stopped
-    # Intenta usar GPU si está disponible; si no, sigue en CPU
     entrypoint: |
       sh -eu -c '
         echo "🔍 Verificando GPU disponible..."
         if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
           export OLLAMA_USE_GPU=1
+          echo "✅ GPU detectada"
         else
           export OLLAMA_USE_GPU=0
+          echo "⚙️  Ejecutando en CPU"
         fi
 
-        echo "🚀 Iniciando servidor Ollama..."
-        ollama serve &
-
-        echo "⏳ Esperando que Ollama esté listo..."
-        for i in $(seq 1 15); do
-          if nc -z 127.0.0.1 11434 >/dev/null 2>&1; then
-            echo "✅ Ollama listo"
-            break
-          fi
-          sleep 2
-          echo "..."
-        done
-
-        echo "⬇️  Descargando modelo $OLLAMA_MODEL..."
-        ollama pull "$OLLAMA_MODEL" || echo "⚠️  No se pudo descargar automáticamente"
-        ollama pull nomic-embed-text || echo "⚠️ No se pudo descargar nomic-embed-text"
-      
-        fg %1
+        echo "🏁 Iniciando servidor Ollama..."
+        echo "🔥 Precargando modelo ${OLLAMA_MODEL}..."
+        ollama run "${OLLAMA_MODEL}" "Hola" >/dev/null 2>&1 || true
+        exec ollama serve
       '
+
 
 
 
