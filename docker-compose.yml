@@ -176,7 +176,7 @@ services:
 
   # PostGIS database.
   db:
-    profiles: ["core", "geonode"]
+    profiles: ["core", "geonode", "ia-db"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
     build:
@@ -219,7 +219,7 @@ services:
 
   # Extra initialization for Keycloak database objects
   init-ia-db:
-    profiles: [ "ia" ]
+    profiles: [ "ia", "ia-db"]
     image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
