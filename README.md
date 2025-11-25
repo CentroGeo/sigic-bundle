@@ -39,4 +39,8 @@ docker compose build --no-cache --profile ia-db     # solo la base de datos de i
 docker compose build --no-cache --profile ia-lb      # solo el load balancer de ia (openresty con lua y redis)
 docker compose build --no-cache --profile ia-engine  # solo el engine de ia
 
+docker compose --profile ia up -d
+docker compose --profile ia-db up -d
+docker compose --profile ia-lb up -d
+docker compose --profile ia-engine up -d
 
