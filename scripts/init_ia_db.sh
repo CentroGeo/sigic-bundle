@@ -3,8 +3,8 @@ set -e
 
 echo "🔍 Verificando base de datos IA (iadata)..."
 
-if [ "${ENABLE_IA_PROXY}" != "True" ]; then
-  echo "🟡 ENABLE_IA_PROXY=False, no se creará la base."
+if [ "${ENABLE_IA}" != "True" ]; then
+  echo "🟡 ENABLE_IA=False, no se creará la base de datos."
   exit 0
 fi
 

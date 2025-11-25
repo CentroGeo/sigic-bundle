@@ -176,7 +176,7 @@ services:
 
   # PostGIS database.
   db:
-    profiles: ["core", "geonode", "llm"]
+    profiles: ["core", "geonode"]
     platform: linux/amd64
     image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
     build:
@@ -219,7 +219,7 @@ services:
 
   # Extra initialization for Keycloak database objects
   init-ia-db:
-    profiles: [ "llm" ]
+    profiles: [ "ia" ]
     image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
@@ -227,7 +227,7 @@ services:
     networks:
       - sigicnetwork
     environment:
-      ENABLE_IA_PROXY: ${ENABLE_IA_PROXY}
+      ENABLE_IA: ${ENABLE_IA}
       DB_NAME: ${IA_DJANGO_DB_NAME}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -363,48 +363,15 @@ services:
     networks: [sigicnetwork]
 
   redis:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-lb"]
     image: redis:latest
     container_name: redis4${COMPOSE_PROJECT_NAME}
     expose:
       - "6379"
     networks: [sigicnetwork]
 
-  ia-engine:
-    profiles: ["llm"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-engine:latest
-    build:
-      context: ./ia-engine
-      dockerfile: Dockerfile
-      args:
-        BUILD_ENV: prod
-    container_name: ia-engine4${COMPOSE_PROJECT_NAME}
-    expose:
-      - "8000"
-    depends_on:
-      - db
-    environment:
-      SECRET_KEY: ${IA_DJANGO_SECRET_KEY}
-      DB_NAME: ${IA_DJANGO_DB_NAME}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_HOST: ${DATABASE_HOST}
-      DB_PORT: ${DATABASE_PORT}
-      IA_USER: ${IA_DJANGO_DB_USER:-iauser}
-      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
-      DJANGO_SETTINGS_MODULE: llm.settings.prod
-      DJANGO_ENV: prod
-      BUILD_ENV: prod
-      GEONODE_SERVER: ${NGINX_BASE_URL}
-      OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
-      OLLAMA_HOST: "${OLLAMA_HOST:-ollama}"
-      OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
-      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
-    entrypoint: sh ./scripts/entrypoint.sh
-    networks: [sigicnetwork]
-
   ia-queue:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-lb"]
     image: ${COMPOSE_PROJECT_NAME}/ia-queue:latest
     build:
       context: ia-lb/redis_queue
@@ -427,7 +394,7 @@ services:
     networks: [sigicnetwork]
 
   ia-lb:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-lb"]
     image: ${COMPOSE_PROJECT_NAME}/ia-lb:latest
     build:
       context: ./ia-lb/nginx-conf
@@ -437,7 +404,7 @@ services:
       - ia-engine
       - ia-queue
     ports:
-      - "81:80"
+      - "800:80"
     expose:
       - "80"
     environment:
@@ -445,11 +412,12 @@ services:
       REDIS_PORT: 6379
       OIDC_CONFIG_URL: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/.well-known/openid-configuration
       NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
+      IA_ENGINE_HOSTS: []
     # volumes:
     #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
 
-  # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
+  # Servicio Ollama opcional (solo se activa si se usa el perfil "ollama")
   ollama:
     profiles: ["ollama"]
     image: ollama/ollama
@@ -480,8 +448,6 @@ services:
         limits:
           memory: 12g
     restart: unless-stopped
-    networks:
-      - sigicnetwork
     entrypoint: |
       sh -eu -c '
         echo "🔍 Verificando GPU disponible..."
@@ -490,17 +456,50 @@ services:
           echo "✅ GPU detectada"
         else
           export OLLAMA_USE_GPU=0
-          echo "⚙️  Ejecutando en CPU"
+          echo "⚙️ Ejecutando en CPU"
         fi
 
         echo "🏁 Iniciando servidor Ollama..."
         echo "🔥 Precargando modelo ${OLLAMA_MODEL}..."
-        ollama run "${OLLAMA_MODEL}" "Hola" >/dev/null 2>&1 || true
+        ollama run "${OLLAMA_MODEL}" "Hola mundo" >/dev/null 2>&1 || true
         exec ollama serve
       '
+    networks: [sigicnetwork]
 
-
-
+  ia-engine:
+    profiles: ["ia", "ia-engine"]
+    image: ${COMPOSE_PROJECT_NAME}/ia-engine:latest
+    build:
+      context: ./ia-engine
+      dockerfile: Dockerfile
+      args:
+        BUILD_ENV: prod
+    container_name: ia-engine4${COMPOSE_PROJECT_NAME}
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    depends_on:
+      - db
+    environment:
+      SECRET_KEY: ${IA_DJANGO_SECRET_KEY}
+      DB_NAME: ${IA_DJANGO_DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: ${IA_DJANGO_DB_HOST}
+      DB_PORT: ${IA_DJANGO_DB_PORT}
+      IA_USER: ${IA_DJANGO_DB_USER:-iauser}
+      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
+      DJANGO_SETTINGS_MODULE: llm.settings.prod
+      DJANGO_ENV: prod
+      BUILD_ENV: prod
+      GEONODE_SERVER: ${NGINX_BASE_URL}
+      OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
+      OLLAMA_HOST: "${OLLAMA_HOST:-ollama}"
+      OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
+      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
+    entrypoint: sh ./scripts/entrypoint.sh
+    networks: [sigicnetwork]
 
 networks:
   sigicnetwork:
