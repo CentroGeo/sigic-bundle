@@ -401,7 +401,6 @@ services:
       dockerfile: Dockerfile
     container_name: ia-lb4${COMPOSE_PROJECT_NAME}
     depends_on:
-      - ia-engine
       - ia-queue
     ports:
       - "800:80"
