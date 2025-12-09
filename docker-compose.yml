@@ -481,12 +481,12 @@ services:
     depends_on:
       - db
     environment:
-      SECRET_KEY: ${IA_DJANGO_SECRET_KEY}
-      DB_NAME: ${IA_DJANGO_DB_NAME}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_HOST: ${IA_DJANGO_DB_HOST}
-      DB_PORT: ${IA_DJANGO_DB_PORT}
+      SECRET_KEY: ${IA_DJANGO_SECRET_KEY:-a-very-secret-key}
+      DB_NAME: ${IA_DJANGO_DB_NAME:-iadata}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_HOST: ${IA_DJANGO_DB_HOST:-db}
+      DB_PORT: ${IA_DJANGO_DB_PORT:-5432}
       IA_USER: ${IA_DJANGO_DB_USER:-iauser}
       IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
       DJANGO_SETTINGS_MODULE: llm.settings.prod
