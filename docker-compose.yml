@@ -17,6 +17,7 @@ x-common-django: &default-common-django
       condition: service_healthy
 
 services:
+
   # Our custom django application. It includes Geonode.
   django:
     profiles: ["geonode"]
@@ -253,10 +254,7 @@ services:
 
   keycloak:
     profiles: ["oidc"]
-    image: ${COMPOSE_PROJECT_NAME}/keycloak:latest
-    build:
-      context: ./keycloak/keycloak
-      dockerfile: Dockerfile
+    image: ghcr.io/centrogeo/sigic-keycloak/keycloak:latest
     container_name: keycloak4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     expose:
@@ -268,7 +266,7 @@ services:
         condition: service_completed_successfully
     environment:
       KC_CACHE: local
-      KC_HTTP_RELATIVE_PATH: ${KEYCLOAK_HTTP_RELATIVE_PATH:-/iam}
+      KC_HTTP_RELATIVE_PATH: ${KC_HTTP_RELATIVE_PATH:-/iam}
       JGROUPS_DISCOVERY_PROTOCOL: DNS_PING
       JGROUPS_DISCOVERY_PROPERTIES: "dns_query=localhost"
     volumes:
