@@ -229,7 +229,7 @@ services:
   # Keycloak OIDC server
   keycloak:
     profiles: ["oidc"]
-    image: ghcr.io/centrogeo/sigic-keycloak/sigic_keycloak:${KEYCLOAK_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-keycloak/keycloak:${KEYCLOAK_BASE_IMAGE_VERSION}
     container_name: keycloak4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     expose:
