@@ -21,6 +21,9 @@ python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostn
 todo:      COMPOSE_PROFILES=geonode,oidc,https,ia,ollama docker compose pull
 ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 
+COMPOSE_PROFILES=frontend-admin,frontend-app docker compose build --no-cache
+COMPOSE_PROFILES=geonode,oidc,frontend-admin,frontend-app docker compose up -d
+
 docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
 
 docker compose --profile oidc --profile llm --profile frontend-admin --profile frontend-pub build --no-cache
