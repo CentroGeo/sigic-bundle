@@ -18,7 +18,7 @@ python3 create-envfile.py --email=info@cesarbenjamin.net --https / --externalhtt
 
 python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --usellm --homepath=app 
 
-todo: COMPOSE_PROFILES=geonode,oidc,ia,ia-db,ia-lb,ia-engine,https,ollama docker compose pull
+todo:      COMPOSE_PROFILES=geonode,oidc,https,ia,ollama docker compose pull
 ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 
 docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
