@@ -105,9 +105,9 @@ def generate_env_file(args):
             True if usefeapp else False
         )
 
-        useia = _jsfile.get("useia", args.useia)
-        _vals_to_replace["useia"] = (
-            True if useia else False
+        enableiaproxy = _jsfile.get("enableiaproxy", args.enableiaproxy)
+        _vals_to_replace["enableiaproxy"] = (
+            True if enableiaproxy else False
         )
 
         oidc_provider_url = _jsfile.get("oidc_provider_url", args.oidc_provider_url)
@@ -269,7 +269,7 @@ if __name__ == "__main__":
         "--usefeapp", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
     parser.add_argument(
-        "--useia", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--enableiaproxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
     parser.add_argument(
         "--externalhttps", action="store_true", default=False, help="If provided, bundled keycloak is used"
