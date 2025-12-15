@@ -55,7 +55,7 @@ services:
 
   # Nginx is serving django static and media files and proxies to django and geonode
   nginx:
-    profiles: ["core", "geonode"]
+    profiles: ["core", "geonode", "nginx"]
     platform: linux/amd64
     image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_nginx:${NGINX_BASE_IMAGE_VERSION}
     build:
@@ -176,7 +176,7 @@ services:
 
   # PostGIS database.
   db:
-    profiles: ["core", "geonode", "llm"]
+    profiles: ["core", "geonode", "ia", "ia-db"]
     platform: linux/amd64
     image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     build:
@@ -219,7 +219,7 @@ services:
 
   # Extra initialization for Keycloak database objects
   init-ia-db:
-    profiles: [ "llm" ]
+    profiles: ["ia", "ia-db"]
     image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
@@ -242,7 +242,7 @@ services:
 
   # Vanilla RabbitMQ service. This is needed by celery
   rabbitmq:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     image: rabbitmq:3-alpine
     container_name: rabbitmq4${COMPOSE_PROJECT_NAME}
     volumes:
@@ -367,7 +367,7 @@ services:
 
   # Redis service for IA engine and queue
   redis:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-lb"]
     image: redis:latest
     container_name: redis4${COMPOSE_PROJECT_NAME}
     expose:
@@ -376,7 +376,7 @@ services:
 
   # IA Engine service
   ia-engine:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-engine"]
     image: ${COMPOSE_PROJECT_NAME}/ia-engine:latest
     build:
       context: ./ia-engine
@@ -410,7 +410,7 @@ services:
 
   # IA Queue service
   ia-queue:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-lb"]
     image: ${COMPOSE_PROJECT_NAME}/ia-queue:latest
     build:
       context: ia-lb/redis_queue
@@ -434,7 +434,7 @@ services:
 
   # IA Load Balancer service
   ia-lb:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-lb"]
     image: ${COMPOSE_PROJECT_NAME}/ia-lb:latest
     build:
       context: ./ia-lb/nginx-conf
