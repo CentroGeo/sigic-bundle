@@ -18,13 +18,14 @@ docker compose --profile oidc --profile frontend-admin --profile frontend-pub --
 docker compose --profile oidc --profile llm --profile frontend-admin --profile frontend-pub build --no-cache
 docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm up -d --remove-orphans
 
-python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --usellm --homepath=app 
+python3 create-envfile.py --env_type=prod --hostname=dv-sigic.snic.secihti.mx --useoidc --oidc_provider_url=https://dv-sigic.snic.secihti.mx/iam/realms/sigic --homepath=app --externalhttps --email=sigic@secihti.mx 
 
 todo:      COMPOSE_PROFILES=geonode,oidc,https,ia,ollama docker compose pull
 ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 
 COMPOSE_PROFILES=frontend-admin,frontend-app docker compose build --no-cache
 COMPOSE_PROFILES=geonode,oidc,frontend-admin,frontend-app docker compose up -d
+
 
 entrar a keycloak, en realm master crear usuario admin y ponerle password, asignarle rol admin en role-mappings de ese realm
 crear realm sigic
@@ -38,6 +39,7 @@ general:
     realm name: sigic
     show name: SIGIC
     html name: <div class="kc-logo-text"><span>SIGIC</span></div>
+    
 
 login: 
   user registration: ?
@@ -57,15 +59,6 @@ localizacion:
   default locale: es-MX
   supported locales: es-MX, en
 
-profile mapper:
-en realm sigic:
-  client scopes:
-    profile:
-      mappers:
-        aggrear por configuración
-          user property: 
-             Name: preferred_username
-
 entrar a /geonode-admin con admin password sacado del .env (GEONODE_ADMIN_PASSWORD, linea 123 aprox)
 Aplicaciones de redes sociales -> agregar nueva aplicación
 id de proveedor: sigic-geonode
@@ -74,7 +67,7 @@ cliente id: sigic-geonode
 cliente secreto: (el que se generó en keycloak)
 guardar
 
-
+dv-sigic.snic.secihti.mx
 
 ---
 
