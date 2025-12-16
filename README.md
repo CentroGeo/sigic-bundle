@@ -16,7 +16,14 @@ python3 create-envfile.py --email=info@cesarbenjamin.net --https / --externalhtt
 
 
 
-python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --usellm --homepath=app 
+python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx \
+  --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --enableiaproxy --homepath=app 
+
+python3 create-envfile.py --env_type=prod --email=info@cesarbenjamin.net --externalhttps \
+  --hostname=geosuite.apache.cesarbenjamin.net \
+  --useoidc --oidc_provider_url=https://geosuite.apache.cesarbenjamin.net/iam/realms/sigic --homepath=app 
+
+
 
 todo:      COMPOSE_PROFILES=geonode,oidc,https,ia,ollama docker compose pull
 ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
