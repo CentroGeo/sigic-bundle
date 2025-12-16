@@ -11,25 +11,24 @@ git submodule update --remote --merge --recursive
 python3 create-envfile.py --email=info@cesarbenjamin.net --https / --externalhttps \
 --hostname=geosuite.demo.cesarbenjamin.net  
 --oidc_provider_url=https://geosuite.demo.cesarbenjamin.net/iam/realms/sigic
---useoidc --usefeadmin --usefeapp --useia --homepath=app
+--useoidc --usefeadmin --usefeapp --usellm --homepath=app
 
 
+docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
+docker compose --profile oidc --profile llm --profile frontend-admin --profile frontend-pub build --no-cache
+docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm up -d --remove-orphans
 
-
-python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx \
-  --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --enableiaproxy --homepath=app 
-
-python3 create-envfile.py --env_type=prod --email=info@cesarbenjamin.net --externalhttps \
-  --hostname=geosuite.apache.cesarbenjamin.net \
-  --useoidc --oidc_provider_url=https://geosuite.apache.cesarbenjamin.net/iam/realms/sigic --homepath=app 
-
-
+python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --usellm --homepath=app 
 
 todo:      COMPOSE_PROFILES=geonode,oidc,https,ia,ollama docker compose pull
 ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 
 COMPOSE_PROFILES=frontend-admin,frontend-app docker compose build --no-cache
 COMPOSE_PROFILES=geonode,oidc,frontend-admin,frontend-app docker compose up -d
+
+
+
+---
 
 docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
 
@@ -44,4 +43,3 @@ docker compose --profile ia up -d
 docker compose --profile ia-db up -d
 docker compose --profile ia-lb up -d
 docker compose --profile ia-engine up -d
-
