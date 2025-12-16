@@ -38,7 +38,6 @@ general:
     realm name: sigic
     show name: SIGIC
     html name: <div class="kc-logo-text"><span>SIGIC</span></div>
-    
 
 login: 
   user registration: ?
@@ -57,6 +56,15 @@ theme:
 localizacion:
   default locale: es-MX
   supported locales: es-MX, en
+
+profile mapper:
+en realm sigic:
+  client scopes:
+    profile:
+      mappers:
+        aggrear por configuración
+          user property: 
+             Name: preferred_username
 
 entrar a /geonode-admin con admin password sacado del .env (GEONODE_ADMIN_PASSWORD, linea 123 aprox)
 Aplicaciones de redes sociales -> agregar nueva aplicación
