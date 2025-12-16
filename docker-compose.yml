@@ -454,7 +454,6 @@ services:
       dockerfile: Dockerfile
     container_name: ia-lb4${COMPOSE_PROJECT_NAME}
     depends_on:
-      - ia-engine
       - ia-queue
     ports:
       - "81:80"
@@ -465,6 +464,7 @@ services:
       REDIS_PORT: 6379
       OIDC_CONFIG_URL: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/.well-known/openid-configuration
       NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
+      IA_ENGINE_HOSTS: ${IA_ENGINE_HOSTS:-ia-engine:8000}
     # volumes:
     #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
@@ -508,12 +508,12 @@ services:
           echo "✅ GPU detectada"
         else
           export OLLAMA_USE_GPU=0
-          echo "⚙️  Ejecutando en CPU"
+          echo "⚙️ Ejecutando en CPU"
         fi
 
         echo "🏁 Iniciando servidor Ollama..."
         echo "🔥 Precargando modelo ${OLLAMA_MODEL}..."
-        ollama run "${OLLAMA_MODEL}" "Hola" >/dev/null 2>&1 || true
+        ollama run "${OLLAMA_MODEL}" "Hola mundo" >/dev/null 2>&1 || true
         exec ollama serve
       '
     networks:
