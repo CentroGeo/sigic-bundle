@@ -26,3 +26,20 @@ ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 COMPOSE_PROFILES=frontend-admin,frontend-app docker compose build --no-cache
 COMPOSE_PROFILES=geonode,oidc,frontend-admin,frontend-app docker compose up -d
 
+
+
+---
+
+docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
+
+docker compose build --no-cache --profile core    # postgres y nginx general (no el nginx del ia-lb)
+docker compose build --no-cache --profile ia      # todo lo de ia
+
+docker compose build --no-cache --profile ia-db     # solo la base de datos de ia sobre el postgres del bundle
+docker compose build --no-cache --profile ia-lb      # solo el load balancer de ia (openresty con lua y redis)
+docker compose build --no-cache --profile ia-engine  # solo el engine de ia
+
+docker compose --profile ia up -d
+docker compose --profile ia-db up -d
+docker compose --profile ia-lb up -d
+docker compose --profile ia-engine up -d
