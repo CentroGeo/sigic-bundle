@@ -14,7 +14,9 @@ python3 create-envfile.py --email=info@cesarbenjamin.net --https / --externalhtt
 --useoidc --usefeadmin --usefeapp --usellm --homepath=app
 
 
-
+docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
+docker compose --profile oidc --profile llm --profile frontend-admin --profile frontend-pub build --no-cache
+docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm up -d --remove-orphans
 
 python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --usellm --homepath=app 
 
@@ -24,7 +26,3 @@ ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 COMPOSE_PROFILES=frontend-admin,frontend-app docker compose build --no-cache
 COMPOSE_PROFILES=geonode,oidc,frontend-admin,frontend-app docker compose up -d
 
-docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
-
-docker compose --profile oidc --profile llm --profile frontend-admin --profile frontend-pub build --no-cache
-docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm up -d --remove-orphans
