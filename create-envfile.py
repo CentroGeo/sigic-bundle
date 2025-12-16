@@ -118,8 +118,6 @@ def generate_env_file(args):
             oidc_provider_url if oidc_provider_url else "https://iam.dev.sigic.mx/realms/sigic"
         )
 
-        _vals_to_replace["http_scheme"] = tcp
-
         _vals_to_replace["http_host"] = _jsfile.get("hostname", args.hostname)
         _vals_to_replace["https_host"] = (
             _jsfile.get("hostname", args.hostname) if tcp == "https" else ""
@@ -134,6 +132,8 @@ def generate_env_file(args):
         )
 
         nginxproto = "https" if args.externalhttps else tcp
+
+        _vals_to_replace["http_scheme"] = nginxproto
 
         _vals_to_replace["siteurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}{subpath}"
         _vals_to_replace["nginxbaseurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}"
@@ -154,7 +154,7 @@ def generate_env_file(args):
             else True
         )
         _vals_to_replace["email"] = _jsfile.get("email", args.email)
-        _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath)
+        _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath) if args.homepath else "app"
 
         if tcp == "https" and not _vals_to_replace["email"]:
             raise Exception("With HTTPS enabled, the email parameter is required")
