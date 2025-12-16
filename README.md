@@ -26,6 +26,46 @@ ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 COMPOSE_PROFILES=frontend-admin,frontend-app docker compose build --no-cache
 COMPOSE_PROFILES=geonode,oidc,frontend-admin,frontend-app docker compose up -d
 
+entrar a keycloak, en realm master crear usuario admin y ponerle password, asignarle rol admin en role-mappings de ese realm
+crear realm sigic
+en realm sigic, crear cliente sigic-admin con access type confidential, y token exchange enabled, cambiar datos en .env
+en realm sigic, crear cliente sigic-app con access type confidential, y token exchange enabled, cambiar datos en .env
+en realm sigic, crear cliente sigic-geonode con access type confidential, y token exchange enabled, conservar secret
+
+realm settings:
+
+general:
+    realm name: sigic
+    show name: SIGIC
+    html name: <div class="kc-logo-text"><span>SIGIC</span></div>
+    
+
+login: 
+  user registration: ?
+  forgot password: ok
+  remember me: ok
+  email as username: ok
+  login with email: ok
+  verify email: ?
+
+email: 
+  configurar smtp con algun servicio real (mailgun, sendgrid, etc)
+
+theme:
+  login theme: sigic-theme
+
+localizacion:
+  default locale: es-MX
+  supported locales: es-MX, en
+
+entrar a /geonode-admin con admin password sacado del .env (GEONODE_ADMIN_PASSWORD, linea 123 aprox)
+Aplicaciones de redes sociales -> agregar nueva aplicación
+id de proveedor: sigic-geonode
+nombre: sigic-geonode
+cliente id: sigic-geonode
+cliente secreto: (el que se generó en keycloak)
+guardar
+
 
 
 ---
