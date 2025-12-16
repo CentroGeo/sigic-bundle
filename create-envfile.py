@@ -105,9 +105,9 @@ def generate_env_file(args):
             True if usefeapp else False
         )
 
-        useia = _jsfile.get("useia", args.useia)
-        _vals_to_replace["useia"] = (
-            True if useia else False
+        enableiaproxy = _jsfile.get("enableiaproxy", args.enableiaproxy)
+        _vals_to_replace["enableiaproxy"] = (
+            True if enableiaproxy else False
         )
 
         oidc_provider_url = _jsfile.get("oidc_provider_url", args.oidc_provider_url)
@@ -117,8 +117,6 @@ def generate_env_file(args):
         _vals_to_replace["oidc_provider_url"] = (
             oidc_provider_url if oidc_provider_url else "https://iam.dev.sigic.mx/realms/sigic"
         )
-
-        _vals_to_replace["http_scheme"] = tcp
 
         _vals_to_replace["http_host"] = _jsfile.get("hostname", args.hostname)
         _vals_to_replace["https_host"] = (
@@ -134,6 +132,8 @@ def generate_env_file(args):
         )
 
         nginxproto = "https" if args.externalhttps else tcp
+
+        _vals_to_replace["http_scheme"] = nginxproto
 
         _vals_to_replace["siteurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}{subpath}"
         _vals_to_replace["nginxbaseurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}"
@@ -154,7 +154,7 @@ def generate_env_file(args):
             else True
         )
         _vals_to_replace["email"] = _jsfile.get("email", args.email)
-        _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath)
+        _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath) if args.homepath else "app"
 
         if tcp == "https" and not _vals_to_replace["email"]:
             raise Exception("With HTTPS enabled, the email parameter is required")
@@ -269,7 +269,7 @@ if __name__ == "__main__":
         "--usefeapp", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
     parser.add_argument(
-        "--useia", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--enableiaproxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
     )
     parser.add_argument(
         "--externalhttps", action="store_true", default=False, help="If provided, bundled keycloak is used"

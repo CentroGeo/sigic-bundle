@@ -15,22 +15,16 @@ python3 create-envfile.py --email=info@cesarbenjamin.net --https / --externalhtt
 
 
 
+
 python3 create-envfile.py --externalhttps --email=info@cesarbenjamin.net --hostname=catalogoinfra.dev.geoint.mx --oidc_provider_url=https://catalogoinfra.dev.geoint.mx/iam/realms/sigic --useoidc --usellm --homepath=app 
 
-docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile ia down 
+todo:      COMPOSE_PROFILES=geonode,oidc,https,ia,ollama docker compose pull
+ia remoto: COMPOSE_PROFILES=geonode,oidc,https docker compose pull
 
-docker compose --profile oidc --profile ia --profile frontend-admin --profile frontend-pub build --no-cache
-docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile ia up -d --remove-orphans
+COMPOSE_PROFILES=frontend-admin,frontend-app docker compose build --no-cache
+COMPOSE_PROFILES=geonode,oidc,frontend-admin,frontend-app docker compose up -d
 
-
-
-python3 create-envfile.py --email=info@cesarbenjamin.net \          # o el email del administrador, para ia no es relevante este dato
---https / --externalhttps \                                         # solo uno de los dos o ninguno, para usar http no usar ninguno, si se va apublicar detras de un proxy externo con https usar --externalhttps
---hostname=geosuite.demo.cesarbenjamin.net \                        # el hostname publico del despliegue
---oidc_provider_url=https://iam.dev.geoint.mx/iam/realms/sigic  \   # la url del proveedor oidc y su realm
---useia                                                             # para habilitar el componente de inteligencia artificial 
-
-
+docker compose --profile oidc --profile frontend-admin --profile frontend-pub --profile llm down 
 
 docker compose build --no-cache --profile core    # postgres y nginx general (no el nginx del ia-lb)
 docker compose build --no-cache --profile ia      # todo lo de ia

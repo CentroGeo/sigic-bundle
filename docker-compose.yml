@@ -1,6 +1,9 @@
 # Common Django template for GeoNode and Celery services below
 x-common-django: &default-common-django
-  image: ${COMPOSE_PROJECT_NAME}/geonode:${GEONODE_BASE_IMAGE_VERSION}
+  image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geonode:${SIGIC_GEONODE_BASE_IMAGE_VERSION}
+  build:
+    context: ./geonode
+    dockerfile: Dockerfile
   restart: unless-stopped
   env_file:
     - .env
@@ -17,14 +20,10 @@ x-common-django: &default-common-django
       condition: service_healthy
 
 services:
-
-  # Our custom django application. It includes Geonode.
+  # Our custom django application. It includes GeoNode.
   django:
     profiles: ["geonode"]
     <<: *default-common-django
-    build:
-      context: ./geonode
-      dockerfile: Dockerfile
     container_name: django4${COMPOSE_PROJECT_NAME}
     healthcheck:
       test: "curl -m 10 --fail --silent --write-out 'HTTP CODE : %{http_code}\n' --output /dev/null http://django:8000/"
@@ -58,7 +57,7 @@ services:
   nginx:
     profiles: ["core", "geonode", "nginx"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/nginx:${NGINX_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_nginx:${NGINX_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/nginx
       dockerfile: Dockerfile
@@ -105,7 +104,7 @@ services:
   letsencrypt:
     profiles: ["https"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/letsencrypt:${LETSENCRYPT_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_letsencrypt:${LETSENCRYPT_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/letsencrypt
       dockerfile: Dockerfile
@@ -120,11 +119,11 @@ services:
     networks:
       - sigicnetwork
 
-  # Geoserver backend
+  # GeoServer backend
   geoserver:
     profiles: ["geonode"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/geoserver:${GEOSERVER_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geoserver:${GEOSERVER_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/geoserver
       dockerfile: Dockerfile
@@ -158,7 +157,7 @@ services:
 
   data-dir-conf:
     profiles: ["geonode"]
-    image: ${COMPOSE_PROJECT_NAME}/geoserver_data:${GEOSERVER_DATA_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geoserver_data:${GEOSERVER_DATA_BASE_IMAGE_VERSION}
     platform: linux/amd64
     build:
       context: ./geonode/docker/geoserver_data
@@ -179,7 +178,7 @@ services:
   db:
     profiles: ["core", "geonode", "ia", "ia-db"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/postgresql
       dockerfile: Dockerfile
@@ -204,7 +203,7 @@ services:
   # Extra initialization for Keycloak database objects
   init-keycloak-db:
     profiles: ["oidc"]
-    image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
         condition: service_healthy
@@ -220,15 +219,15 @@ services:
 
   # Extra initialization for Keycloak database objects
   init-ia-db:
-    profiles: [ "ia", "ia-db"]
-    image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
+    profiles: ["ia", "ia-db"]
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
         condition: service_healthy
     networks:
       - sigicnetwork
     environment:
-      ENABLE_IA: ${ENABLE_IA}
+      ENABLE_IA_DB: True
       DB_NAME: ${IA_DJANGO_DB_NAME}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -243,7 +242,7 @@ services:
 
   # Vanilla RabbitMQ service. This is needed by celery
   rabbitmq:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     image: rabbitmq:3-alpine
     container_name: rabbitmq4${COMPOSE_PROJECT_NAME}
     volumes:
@@ -252,9 +251,13 @@ services:
     networks:
       - sigicnetwork
 
+  # Keycloak OIDC server
   keycloak:
     profiles: ["oidc"]
-    image: ghcr.io/centrogeo/sigic-keycloak/keycloak:latest
+    image: ghcr.io/centrogeo/sigic-keycloak/keycloak:${KEYCLOAK_BASE_IMAGE_VERSION}
+    build:
+      context: ./keycloak/keycloak
+      dockerfile: Dockerfile
     container_name: keycloak4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     expose:
@@ -266,13 +269,26 @@ services:
         condition: service_completed_successfully
     environment:
       KC_CACHE: local
+      KC_DB: postgres
+      KC_DB_URL_HOST: ${KC_DB_URL_HOST}
+      KC_DB_URL_DATABASE: ${KC_DB_URL_DATABASE}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT:-true}
       KC_HTTP_RELATIVE_PATH: ${KC_HTTP_RELATIVE_PATH:-/iam}
+      KC_HTTP_MANAGEMENT_RELATIVE_PATH: ${KC_HTTP_MANAGEMENT_RELATIVE_PATH:-/iam}
+      KC_HTTP_ENABLED: true
+      VIRTUAL_HOST: ${KC_HOSTNAME}
+      VIRTUAL_PORT: 8080
       JGROUPS_DISCOVERY_PROTOCOL: DNS_PING
       JGROUPS_DISCOVERY_PROPERTIES: "dns_query=localhost"
     volumes:
       - keycloak_data:/opt/keycloak/data
     networks: [sigicnetwork]
 
+  # Frontend for admin users
   frontend-admin:
     profiles: ["frontend-admin"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-admin:latest
@@ -299,7 +315,7 @@ services:
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_API: ${NGINX_BASE_URL}/api/v2
       NUXT_PUBLIC_GEOSERVER_URL: ${NGINX_BASE_URL}/gs
-      NUXT_PUBLIC_IA_BACKEND_URL: ${IA_BASE_URL}
+      NUXT_PUBLIC_IA_BACKEND_URL: ${IA_BACKEND_URL}
       NUXT_PUBLIC_DEFAULT_PAGE: /
       NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ''
       NUXT_AUTH_ORIGIN: ${NUXT_AUTH_ORIGIN}
@@ -317,6 +333,7 @@ services:
       NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
+  # Frontend for end users
   frontend-app:
     profiles: ["frontend-app"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-app:latest
@@ -343,7 +360,7 @@ services:
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_API: ${NGINX_BASE_URL}/api/v2
       NUXT_PUBLIC_GEOSERVER_URL: ${NGINX_BASE_URL}/gs
-      NUXT_PUBLIC_IA_BACKEND_URL: ${IA_BASE_URL}
+      NUXT_PUBLIC_IA_BACKEND_URL: ${IA_BACKEND_URL}
       NUXT_PUBLIC_DEFAULT_PAGE: /
       NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ''
       NUXT_AUTH_ORIGIN: ${NUXT_AUTH_ORIGIN}
@@ -361,6 +378,7 @@ services:
       NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
+  # Redis service for IA engine and queue
   redis:
     profiles: ["ia", "ia-lb"]
     image: redis:latest
@@ -369,6 +387,41 @@ services:
       - "6379"
     networks: [sigicnetwork]
 
+  # IA Engine service
+  ia-engine:
+    profiles: ["ia", "ia-engine"]
+    image: ${COMPOSE_PROJECT_NAME}/ia-engine:latest
+    build:
+      context: ./ia-engine
+      dockerfile: Dockerfile
+      args:
+        BUILD_ENV: prod
+    container_name: ia-engine4${COMPOSE_PROJECT_NAME}
+    expose:
+      - "8000"
+    depends_on:
+      - db
+    environment:
+      SECRET_KEY: ${IA_DJANGO_SECRET_KEY}
+      DB_NAME: ${IA_DJANGO_DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: ${DATABASE_HOST}
+      DB_PORT: ${DATABASE_PORT}
+      IA_USER: ${IA_DJANGO_DB_USER:-iauser}
+      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
+      DJANGO_SETTINGS_MODULE: llm.settings.prod
+      DJANGO_ENV: prod
+      BUILD_ENV: prod
+      GEONODE_SERVER: ${NGINX_BASE_URL}
+      OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
+      OLLAMA_HOST: "${OLLAMA_HOST:-ollama}"
+      OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
+      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
+    entrypoint: sh ./scripts/entrypoint.sh
+    networks: [sigicnetwork]
+
+  # IA Queue service
   ia-queue:
     profiles: ["ia", "ia-lb"]
     image: ${COMPOSE_PROJECT_NAME}/ia-queue:latest
@@ -392,6 +445,7 @@ services:
       OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
     networks: [sigicnetwork]
 
+  # IA Load Balancer service
   ia-lb:
     profiles: ["ia", "ia-lb"]
     image: ${COMPOSE_PROJECT_NAME}/ia-lb:latest
@@ -402,7 +456,7 @@ services:
     depends_on:
       - ia-queue
     ports:
-      - "800:80"
+      - "81:80"
     expose:
       - "80"
     environment:
@@ -415,7 +469,7 @@ services:
     #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
 
-  # Servicio Ollama opcional (solo se activa si se usa el perfil "ollama")
+  # Ollama LLM service
   ollama:
     profiles: ["ollama"]
     image: ollama/ollama
@@ -462,42 +516,8 @@ services:
         ollama run "${OLLAMA_MODEL}" "Hola mundo" >/dev/null 2>&1 || true
         exec ollama serve
       '
-    networks: [sigicnetwork]
-
-  ia-engine:
-    profiles: ["ia", "ia-engine"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-engine:latest
-    build:
-      context: ./ia-engine
-      dockerfile: Dockerfile
-      args:
-        BUILD_ENV: prod
-    container_name: ia-engine4${COMPOSE_PROJECT_NAME}
-    ports:
-      - "8000:8000"
-    expose:
-      - "8000"
-    depends_on:
-      - db
-    environment:
-      SECRET_KEY: ${IA_DJANGO_SECRET_KEY:-a-very-secret-key}
-      DB_NAME: ${IA_DJANGO_DB_NAME:-iadata}
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DB_HOST: ${IA_DJANGO_DB_HOST:-db}
-      DB_PORT: ${IA_DJANGO_DB_PORT:-5432}
-      IA_USER: ${IA_DJANGO_DB_USER:-iauser}
-      IA_PASSWORD: ${IA_DJANGO_DB_PASSWORD}
-      DJANGO_SETTINGS_MODULE: llm.settings.prod
-      DJANGO_ENV: prod
-      BUILD_ENV: prod
-      GEONODE_SERVER: ${NGINX_BASE_URL}
-      OLLAMA_PROTO: "${OLLAMA_PROTO:-http}"
-      OLLAMA_HOST: "${OLLAMA_HOST:-ollama}"
-      OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
-      OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
-    entrypoint: sh ./scripts/entrypoint.sh
-    networks: [sigicnetwork]
+    networks:
+      - sigicnetwork
 
 networks:
   sigicnetwork:
