@@ -240,6 +240,29 @@ services:
     entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
     restart: "no"
 
+  # Extra initialization for Keycloak database objects
+  init-levantamiento-db:
+    profiles: ["levantamiento", "levantamiento-db"]
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sigicnetwork
+    environment:
+      ENABLE_LEVANTAMIENTO_DB: True
+      DB_NAME: ${LEVANTAMIENTO_DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: ${DATABASE_HOST}
+      DB_PORT: ${DATABASE_PORT}
+      IA_USER: ${LEVANTAMIENTO_DB_USER:-iauser}
+      IA_PASSWORD: ${LEVANTAMIENTO_DB_PASSWORD}
+    volumes:
+      - ./scripts/init_levantamiento_db.sh:/init_levantamiento_db.sh:ro
+    entrypoint: [ "/bin/bash", "/init_levantamiento_db.sh" ]
+    restart: "no"
+
   # Vanilla RabbitMQ service. This is needed by celery
   rabbitmq:
     profiles: ["geonode"]
@@ -527,6 +550,39 @@ services:
     networks:
       - sigicnetwork
 
+  # Levantamiento
+  levantamiento:
+    profiles: [ "levantamiento" ]
+    image: ghcr.io/centrogeo/sigic-levantamiento/levantamiento:latest
+    build:
+      context: ./levantamiento
+      dockerfile: Dockerfile
+    container_name: levantamiento4${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
+    expose:
+      - "3000"
+    ports:
+      - "${PORT:-3003}:${PORT:-3000}"
+    environment:
+      PORT: ${LEVANTAMIENTO_PORT:-3000}
+      PG_HOST: ${DATABASE_HOST}
+      PG_PORT: ${DATABASE_PORT}
+      PG_USER: ${POSTGRES_USER}
+      PG_PASSWORD: ${POSTGRES_PASSWORD}
+      PG_DATABASE: ${LEVANTAMIENTO_DB_NAME}
+      OVERPASS_URLS: ${OVERPASS_URLS:-https://overpass.kumi.systems/api/interpreter,https://overpass-api.de/api/interpreter,https://lz4.overpass-api.de/api/interpreter}
+      OVERPASS_PING_TIMEOUT_MS: ${OVERPASS_PING_TIMEOUT_MS:-4000}
+      OVERPASS_MIRROR_TTL_MS: ${OVERPASS_MIRROR_TTL_MS:-600000}
+      OSM_OVERPASS_TIMEOUT: ${OSM_OVERPASS_TIMEOUT:-90}
+      CACHE_TTL_SEC: ${CACHE_TTL_SEC:-600}
+      SOCIALACCOUNT_OIDC_CERTS: ${SOCIALACCOUNT_OIDC_CERTS}
+      SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
+    volumes:
+      - levantamiento-uploads:/usr/src/app/uploads
+      - levantamiento-downloads:/usr/src/app/downloads
+    networks:
+      - sigicnetwork
+
 networks:
   sigicnetwork:
     driver: bridge
@@ -560,3 +616,7 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME}-statics-uploaded-ia
   ollama-data:
     name: ${COMPOSE_PROJECT_NAME}-ollama_data
+  levantamiento-uploads:
+    name: ${COMPOSE_PROJECT_NAME}-levantamiento-uploads
+  levantamiento-downloads:
+    name: ${COMPOSE_PROJECT_NAME}-levantamiento-downloads

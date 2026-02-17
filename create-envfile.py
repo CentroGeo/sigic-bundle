@@ -110,6 +110,21 @@ def generate_env_file(args):
             True if enableiaproxy else False
         )
 
+        enablelevantamientoproxy = _jsfile.get("enablelevantamientoproxy", args.enablelevantamientoproxy)
+        _vals_to_replace["enablelevantamientoproxy"] = (
+            True if enablelevantamientoproxy else False
+        )
+
+        enableiadb = _jsfile.get("enableiadb", args.enableiadb)
+        _vals_to_replace["enableiadb"] = (
+            True if enableiadb else False
+        )
+
+        enablelevantamientodb = _jsfile.get("enablelevantamientodb", args.enablelevantamientodb)
+        _vals_to_replace["enablelevantamientodb"] = (
+            True if enablelevantamientodb else False
+        )
+
         oidc_provider_url = _jsfile.get("oidc_provider_url", args.oidc_provider_url)
         _vals_to_replace["oidc_enabled"] = (
             True if oidc_provider_url and oidc_provider_url != "" else False
@@ -262,17 +277,26 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--usefeadmin", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usefeadmin", action="store_true", default=False, help="If provided, bundled frontend admin is used"
     )
 
     parser.add_argument(
-        "--usefeapp", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usefeapp", action="store_true", default=False, help="If provided, bundled frontend app is used"
     )
     parser.add_argument(
-        "--enableiaproxy", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--enableiaproxy", action="store_true", default=False, help="If provided, bundled ia proxy is used"
     )
     parser.add_argument(
-        "--externalhttps", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--enablelevantamientoproxy", action="store_true", default=False, help="If provided, bundled levantamiento proxy is used"
+    )
+    parser.add_argument(
+        "--enableiadb", action="store_true", default=False, help="If provided, bundled ia db is used"
+    )
+    parser.add_argument(
+        "--enablelevantamientodb", action="store_true", default=False, help="If provided, bundled levantamiento db is used"
+    )
+    parser.add_argument(
+        "--externalhttps", action="store_true", default=False, help="If provided, external https is used"
     )
 
     parser.add_argument("--kcadm_cid", help="Keycloak admin client id")
