@@ -22,3 +22,6 @@
 	path = ia-lb
 	url = https://github.com/CentroGeo/sigic-ia-loadbalancer.git
 	branch = develop-bundle
+[submodule "levantamiento"]
+	path = levantamiento
+	url = https://github.com/CentroGeo/sigic-levantamiento.git
