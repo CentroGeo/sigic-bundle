@@ -555,7 +555,7 @@ services:
 
   # Levantamiento
   levantamiento:
-    profiles: [ "levantamiento" ]
+    profiles: [ "levantamiento", "levantamiento-api"]
     image: ghcr.io/centrogeo/sigic-levantamiento/levantamiento:latest
     build:
       context: ./levantamiento
