@@ -79,6 +79,7 @@ services:
       - ${ENABLE_ADMIN_PROXY:+./overrides/nginx/z-frontend-admin.conf:/etc/nginx/sites-enabled/z-frontend-admin.conf:ro}
       - ${ENABLE_APP_PROXY:+./overrides/nginx/z-frontend-app.conf:/etc/nginx/sites-enabled/z-frontend-app.conf:ro}
       - ${ENABLE_IA_PROXY:+./overrides/nginx/z-ia-proxy.conf:/etc/nginx/sites-enabled/z-ia-proxy.conf:ro}
+      - ${ENABLE_LEVANTAMIENTO_PROXY:+./overrides/nginx/z-levantamiento-proxy.conf:/etc/nginx/sites-enabled/z-levantamiento-proxy.conf:ro}
 
     restart: unless-stopped
     networks:
@@ -567,15 +568,15 @@ services:
       PORT: ${LEVANTAMIENTO_PORT:-3000}
       PG_HOST: ${DATABASE_HOST}
       PG_PORT: ${DATABASE_PORT}
-      PG_USER: ${POSTGRES_USER}
-      PG_PASSWORD: ${POSTGRES_PASSWORD}
-      PG_DATABASE: ${LEVANTAMIENTO_DB_NAME}
+      PG_USER: ${LEVANTAMIENTO_DB_USER}
+      PG_PASSWORD: ${LEVANTAMIENTO_DB_PASSWORD}
+      PG_DATABASE: ${levantamientodata}
       OVERPASS_URLS: ${OVERPASS_URLS:-https://overpass.kumi.systems/api/interpreter,https://overpass-api.de/api/interpreter,https://lz4.overpass-api.de/api/interpreter}
       OVERPASS_PING_TIMEOUT_MS: ${OVERPASS_PING_TIMEOUT_MS:-4000}
       OVERPASS_MIRROR_TTL_MS: ${OVERPASS_MIRROR_TTL_MS:-600000}
       OSM_OVERPASS_TIMEOUT: ${OSM_OVERPASS_TIMEOUT:-90}
       CACHE_TTL_SEC: ${CACHE_TTL_SEC:-600}
-      SOCIALACCOUNT_OIDC_CERTS: ${SOCIALACCOUNT_OIDC_CERTS}
+      SOCIALACCOUNT_OIDC_CERTS: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/protocol/openid-connect/certs
       SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
     volumes:
       - levantamiento-uploads:/usr/src/app/uploads
