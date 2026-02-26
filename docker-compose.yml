@@ -321,9 +321,6 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_ENV: production
-        IS_NUXT_SUBMODULE: true
-        NUXT_PUBLIC_APP_BASE_PATH: /admin/
-        NUXT_APP_BASE_PATH: /admin/
         NUXT_APP_BASE_URL: /admin/
         NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/admin/api/auth
         NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
@@ -360,8 +357,6 @@ services:
       KEYCLOAK_CLIENT_ID: ${ADMIN_KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${ADMIN_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${ADMIN_NUXT_AUTH_SECRET}
-      NUXT_PUBLIC_APP_BASE_PATH: /admin/
-      NUXT_APP_BASE_PATH: /admin/
       NUXT_APP_BASE_URL: /admin/
       NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
@@ -376,8 +371,6 @@ services:
       args:
         NODE_ENV: production
         IS_NUXT_SUBMODULE: true
-        NUXT_PUBLIC_APP_BASE_PATH: /app/
-        NUXT_APP_BASE_PATH: /app/
         NUXT_APP_BASE_URL: /app/
         NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/app/api/auth
         NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
@@ -414,8 +407,6 @@ services:
       KEYCLOAK_CLIENT_ID: ${APP_KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${APP_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${APP_NUXT_AUTH_SECRET}
-      NUXT_PUBLIC_APP_BASE_PATH: /app/
-      NUXT_APP_BASE_PATH: /app/
       NUXT_APP_BASE_URL: /app/
       NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
