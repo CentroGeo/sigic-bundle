@@ -315,18 +315,10 @@ services:
   # Frontend for admin users
   frontend-admin:
     profiles: ["frontend", "frontend-admin"]
-    image: ${COMPOSE_PROJECT_NAME}/frontend-admin:latest
+    image: ${COMPOSE_PROJECT_NAME}/sigic-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
-        NUXT_APP_BASE_URL: /admin/
-        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/admin/api/auth
-        NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
-        NUXT_PUBLIC_LEVANTAMIENTO_URL: ${NUXT_PUBLIC_LEVANTAMIENTO_URL}
-        NUXT_PUBLIC_KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
-        NUXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${ADMIN_KEYCLOAK_CLIENT_ID}
     container_name: frontendadmin4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
@@ -364,19 +356,10 @@ services:
   # Frontend for end users
   frontend-app:
     profiles: ["frontend", "frontend-app"]
-    image: ${COMPOSE_PROJECT_NAME}/frontend-app:latest
+    image: ${COMPOSE_PROJECT_NAME}/sigic-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
-        IS_NUXT_SUBMODULE: true
-        NUXT_APP_BASE_URL: /app/
-        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/app/api/auth
-        NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
-        NUXT_PUBLIC_LEVANTAMIENTO_URL: ${NUXT_PUBLIC_LEVANTAMIENTO_URL}
-        NUXT_PUBLIC_KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
-        NUXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${ADMIN_KEYCLOAK_CLIENT_ID}
     container_name: frontendapp4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
