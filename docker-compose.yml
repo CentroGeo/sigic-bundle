@@ -314,7 +314,7 @@ services:
 
   # Frontend for admin users
   frontend-admin:
-    profiles: ["frontend-admin"]
+    profiles: ["frontend", "frontend-admin"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-admin:latest
     build:
       context: ./frontend
@@ -327,7 +327,7 @@ services:
         NUXT_PUBLIC_LEVANTAMIENTO_URL: ${NUXT_PUBLIC_LEVANTAMIENTO_URL}
         NUXT_PUBLIC_KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
         NUXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${ADMIN_KEYCLOAK_CLIENT_ID}
-    container_name: fendadmin4${COMPOSE_PROJECT_NAME}
+    container_name: frontendadmin4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
       - .env
@@ -363,7 +363,7 @@ services:
 
   # Frontend for end users
   frontend-app:
-    profiles: ["frontend-app"]
+    profiles: ["frontend", "frontend-app"]
     image: ${COMPOSE_PROJECT_NAME}/frontend-app:latest
     build:
       context: ./frontend
@@ -377,7 +377,7 @@ services:
         NUXT_PUBLIC_LEVANTAMIENTO_URL: ${NUXT_PUBLIC_LEVANTAMIENTO_URL}
         NUXT_PUBLIC_KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
         NUXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${ADMIN_KEYCLOAK_CLIENT_ID}
-    container_name: fendapp4${COMPOSE_PROJECT_NAME}
+    container_name: frontendapp4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
       - .env
