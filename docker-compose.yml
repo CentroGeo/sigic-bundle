@@ -492,8 +492,6 @@ services:
     build:
       context: ./ia-engine
       dockerfile: Dockerfile.ollama
-      args:
-        OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
     container_name: ollama4${COMPOSE_PROJECT_NAME}
     ports:
       - "${OLLAMA_PORT:-11434}:11434"
@@ -501,7 +499,6 @@ services:
       - "${OLLAMA_PORT:-11434}"
     volumes:
       - ollama-data:/root/.ollama
-      # Monta el dispositivo NVIDIA solo si existe (evita error en hosts sin GPU)
       - /dev:/dev
     environment:
       OLLAMA_KEEP_ALIVE: "50m"
@@ -529,7 +526,15 @@ services:
 
         echo "🏁 Iniciando servidor Ollama..."
         echo "🔥 Precargando modelo ${OLLAMA_MODEL}..."
-        ollama run "${OLLAMA_MODEL}" "Hola mundo" >/dev/null 2>&1 || true
+
+        echo "🔍 Verificando modelo ${OLLAMA_MODEL}..."
+        if ! ollama list | grep -q "$OLLAMA_MODEL"; then
+          echo "⬇️ Descargando modelo..."
+          ollama pull "$OLLAMA_MODEL"
+        else
+          echo "✅ Modelo ya disponible"
+        fi
+      
         exec ollama serve
       '
     networks:
