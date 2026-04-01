@@ -440,7 +440,7 @@ services:
   # IA Queue service
   ia-queue:
     profiles: ["ia", "ia-lb"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-queue:latest
+    image: ghcr.io/centrogeo/sigic-ia-loadbalancer/ia-queue:latest
     build:
       context: ia-lb/redis_queue
       dockerfile: Dockerfile
@@ -464,7 +464,7 @@ services:
   # IA Load Balancer service
   ia-lb:
     profiles: ["ia", "ia-lb"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-lb:latest
+    image: ghcr.io/centrogeo/sigic-ia-loadbalancer/ia-lb:latest
     build:
       context: ./ia-lb/nginx-conf
       dockerfile: Dockerfile
