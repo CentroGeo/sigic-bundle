@@ -75,6 +75,7 @@ services:
       - nginx-confd:/etc/nginx
       - nginx-certificates:/geonode-certificates
       - statics:/mnt/volumes/statics
+      - uploaded-ia:/mnt/volumes/statics/uploaded/ia
       - ${ENABLE_OIDC_PROXY:+./overrides/nginx/z-keycloak-proxy.conf:/etc/nginx/sites-enabled/z-keycloak-proxy.conf:ro}
       - ${ENABLE_ADMIN_PROXY:+./overrides/nginx/z-frontend-admin.conf:/etc/nginx/sites-enabled/z-frontend-admin.conf:ro}
       - ${ENABLE_APP_PROXY:+./overrides/nginx/z-frontend-app.conf:/etc/nginx/sites-enabled/z-frontend-app.conf:ro}
