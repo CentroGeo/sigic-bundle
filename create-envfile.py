@@ -112,7 +112,7 @@ def generate_env_file(args):
 
         enablelevantamientoproxy = _jsfile.get("enablelevantamientoproxy", args.enablelevantamientoproxy)
         _vals_to_replace["enablelevantamientoproxy"] = (
-            True if enablelevantamientoproxy else ''
+            '' if enablelevantamientoproxy else '# '
         )
 
         enableiadb = _jsfile.get("enableiadb", args.enableiadb)
@@ -287,7 +287,7 @@ if __name__ == "__main__":
         "--enableiaproxy", action="store_true", default=False, help="If provided, bundled ia proxy is used"
     )
     parser.add_argument(
-        "--enablelevantamientoproxy", action="store_true", default=False, help="If provided, bundled levantamiento proxy is used"
+        "--enablelevantamientoproxy", action="store_true", default='# ', help="If provided, bundled levantamiento proxy is used"
     )
     parser.add_argument(
         "--enableiadb", action="store_true", default=False, help="If provided, bundled ia db is used"
