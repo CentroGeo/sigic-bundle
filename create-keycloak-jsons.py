@@ -2,7 +2,6 @@
 import json
 import os
 import re
-import sys
 
 
 def parse_env(path):
@@ -57,14 +56,17 @@ def process_file(path, values):
 
 
 def main():
-    env = parse_env(".env")
+    # 👉 paths correctos según tu repo
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    env_path = os.path.join(base_dir, ".env")
+    templates_dir = os.path.join(base_dir, "overrides", "keycloak")
+
+    env = parse_env(env_path)
     values = build_replacements(env)
 
-    base = "keycloakcfg"
-
-    for name in os.listdir(base):
+    for name in os.listdir(templates_dir):
         if name.endswith(".json.template"):
-            process_file(os.path.join(base, name), values)
+            process_file(os.path.join(templates_dir, name), values)
 
 
 if __name__ == "__main__":
