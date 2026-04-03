@@ -1,15 +1,16 @@
 #!/bin/bash
 set -e
 
-FLAVOR=$1
+FLAVOR=${1:-default}
 HTTPS_MODE=$2
 
-if [ -z "$FLAVOR" ]; then
-  echo "Uso: ./run-flavor.sh <flavor> [http|https|externalhttps]"
+if [ -z "$HTTPS_MODE" ]; then
+  echo "Uso: ./sigic_install.sh <sabor> [http|https|externalhttps]"
+  echo "El valor de <sabor> debe corresponder a un archivo JSON en sigic-modos/ (ej: default.json)"
   exit 1
 fi
 
-FLAVOR_FILE="flavors/$FLAVOR.json"
+FLAVOR_FILE="sigic-modos/$FLAVOR.json"
 
 if [ ! -f "$FLAVOR_FILE" ]; then
   echo "No existe flavor: $FLAVOR_FILE"
@@ -47,8 +48,38 @@ echo "🌐 Modo: ${HTTPS_MODE:-http}"
 # 🔹 generar .env + jsons
 # =========================
 
+# =========================
+# 🔹 convertir JSON a flags
+# =========================
+
+FLAGS=""
+
+# boolean flags
+for key in useoidc usefrontendadmin usefrontendapp enableiaproxy enableiadb enablelevantamientoproxy enablelevantamientodb; do
+  val=$(jq -r ".$key" "$FLAVOR_FILE")
+  if [ "$val" = "true" ]; then
+    FLAGS="$FLAGS --$key"
+  fi
+done
+
+# string flags
+ENV_TYPE=$(jq -r '.env_type' "$FLAVOR_FILE")
+HOSTNAME=$(jq -r '.hostname' "$FLAVOR_FILE")
+EMAIL=$(jq -r '.email' "$FLAVOR_FILE")
+OIDC_URL=$(jq -r '.oidc_provider_url' "$FLAVOR_FILE")
+HOMEPATH=$(jq -r '.homepath' "$FLAVOR_FILE")
+
+# =========================
+# 🔹 ejecutar script real
+# =========================
+
 python3 create-envfile.py \
-  -f "$FLAVOR_FILE" \
+  --env_type="$ENV_TYPE" \
+  --hostname="$HOSTNAME" \
+  --email="$EMAIL" \
+  --oidc_provider_url="$OIDC_URL" \
+  --homepath="$HOMEPATH" \
+  $FLAGS \
   $HTTPS_FLAG
 
 # =========================
