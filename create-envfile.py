@@ -301,6 +301,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--kcadm_cid", help="Keycloak admin client id")
     parser.add_argument("--kcadm_secret", help="Keycloak admin client secret")
+    parser.add_argument("--kcgn_cid", help="Keycloak geonode client id")
+    parser.add_argument("--kcgn_secret", help="Keycloak geonode client secret")
     parser.add_argument("--kcapp_cid", help="Keycloak public app client id")
     parser.add_argument("--kcapp_secret", help="Keycloak public app client secret")
     parser.add_argument("--adm_nuxt_auth_secret", help="Nuxt admin auth secret")
