@@ -112,7 +112,7 @@ def generate_env_file(args):
 
         enablelevantamientoproxy = _jsfile.get("enablelevantamientoproxy", args.enablelevantamientoproxy)
         _vals_to_replace["enablelevantamientoproxy"] = (
-            True if enablelevantamientoproxy else False
+            "" if enablelevantamientoproxy else "# "
         )
 
         enableiadb = _jsfile.get("enableiadb", args.enableiadb)
@@ -179,11 +179,8 @@ def generate_env_file(args):
         return {**_jsfile, **_vals_to_replace}
 
     for key, val in _get_vals_to_replace(args).items():
-        if key in ["subpath", "homepath"]:
+        if key in ["subpath", "homepath", "enablelevantamientoproxy"]:
             _val = "" if not val else str(val)
-        elif key == "enablelevantamientoproxy":
-            print(f"{key}: {val}")
-            _val = "" if val else "# "
         else:
             _val = val or "".join(random.choice(_simple_chars) for _ in range(15))
         if isinstance(val, bool) or key in ["email", "http_host", "https_host"]:
