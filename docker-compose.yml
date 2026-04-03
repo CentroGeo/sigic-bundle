@@ -1,6 +1,6 @@
 # Common Django template for GeoNode and Celery services below
 x-common-django: &default-common-django
-  image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geonode:${SIGIC_GEONODE_BASE_IMAGE_VERSION}
+  image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geonode:latest
   build:
     context: ./geonode
     dockerfile: Dockerfile
