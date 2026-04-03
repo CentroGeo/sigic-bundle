@@ -91,3 +91,25 @@ PROFILES=$(jq -r '.profiles | join(",")' "$FLAVOR_FILE")
 echo "🚀 Profiles: $PROFILES"
 
 COMPOSE_PROFILES=$PROFILES docker compose up -d
+
+
+# =========================
+# 🔹 importar keycloak (si aplica)
+# =========================
+
+if echo "$PROFILES" | grep -q "oidc"; then
+  echo "🔐 Detectado profile oidc → importando configuración de Keycloak..."
+
+  # esperar a que keycloak esté listo
+  echo "⏳ Esperando Keycloak..."
+
+  until docker exec keycloak4sigic /opt/keycloak/bin/kcadm.sh get realms > /dev/null 2>&1; do
+    sleep 2
+  done
+
+  echo "🚀 Ejecutando import de clientes..."
+
+  docker exec keycloak4sigic bash -c "/scripts/import-keycloak-clients.sh"
+
+  echo "✅ Keycloak configurado"
+fi
