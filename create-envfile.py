@@ -179,11 +179,11 @@ def generate_env_file(args):
         return {**_jsfile, **_vals_to_replace}
 
     for key, val in _get_vals_to_replace(args).items():
-        print(f"{key}: {val}")
         if key in ["subpath", "homepath"]:
             _val = "" if not val else str(val)
         elif key == "enablelevantamientoproxy":
-            _val = "# " if not val else ""
+            print(f"{key}: {val}")
+            _val = "" if val else "# "
         else:
             _val = val or "".join(random.choice(_simple_chars) for _ in range(15))
         if isinstance(val, bool) or key in ["email", "http_host", "https_host"]:
