@@ -311,6 +311,7 @@ services:
       JGROUPS_DISCOVERY_PROPERTIES: "dns_query=localhost"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - ./overrides/keycloak:/opt/keycloak/data/import
     networks: [sigicnetwork]
 
   # Frontend for admin users
