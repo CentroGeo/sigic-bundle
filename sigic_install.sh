@@ -128,7 +128,7 @@ if echo "$PROFILES" | grep -q "geonode"; then
 
   echo "🚀 Cargando fixture socialaccount..."
 
-  docker exec django4${COMPOSE_PROJECT_NAME} bash -c "python manage.py loaddata /usr/src/sigic_geonode/fixtures/socialaccount.json" || true
+  docker exec django4sigic bash -c "python manage.py loaddata /usr/src/sigic_geonode/fixtures/socialaccount.json" || true
 
   echo "✅ Fixture cargado"
 fi
