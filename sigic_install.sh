@@ -109,4 +109,6 @@ if echo "$PROFILES" | grep -q "oidc"; then
   docker exec keycloak4sigic bash -c "/scripts/import-keycloak-clients.sh"
 
   echo "✅ Keycloak configurado"
+
+  cat .env | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
 fi
