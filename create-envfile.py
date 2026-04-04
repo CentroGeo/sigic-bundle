@@ -112,7 +112,7 @@ def generate_env_file(args):
 
         enablelevantamientoproxy = _jsfile.get("enablelevantamientoproxy", args.enablelevantamientoproxy)
         _vals_to_replace["enablelevantamientoproxy"] = (
-            "./overrides/nginx/z-levantamiento-proxy.conf:/etc/nginx/sites-enabled/z-levantamiento-proxy.conf:ro" if enablelevantamientoproxy else ""
+            "" if enablelevantamientoproxy else "# "
         )
 
         enableiadb = _jsfile.get("enableiadb", args.enableiadb)
