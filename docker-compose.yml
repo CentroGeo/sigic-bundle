@@ -252,7 +252,7 @@ services:
     networks:
       - sigicnetwork
     environment:
-      ENABLE_LEVANTAMIENTO_DB: True
+      ENABLE_LEVANTAMIENTO_DB: "True"
       DB_NAME: ${LEVANTAMIENTO_DB_NAME}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}

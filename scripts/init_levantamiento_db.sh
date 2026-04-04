@@ -2,8 +2,7 @@
 set -e
 
 echo "🔍 Verificando base de datos Levantamiento..."
-
-if [ "${ENABLE_LEVANTAMIENTO_PROXY}" != "True" ]; then
+if [ "${ENABLE_LEVANTAMIENTO_PROXY,,}" != "true" ]; then
   echo "🟡 ENABLE_LEVANTAMIENTO_PROXY=False, no se creará la base."
   exit 0
 fi
