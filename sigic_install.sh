@@ -132,3 +132,6 @@ if echo "$PROFILES" | grep -q "geonode"; then
 
   echo "✅ Fixture cargado"
 fi
+
+echo "🎉 SIGIC instalado con éxito!"
+cat .env | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
