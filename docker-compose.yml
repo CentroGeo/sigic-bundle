@@ -14,6 +14,7 @@ x-common-django: &default-common-django
     - data:/data
     - tmp:/tmp
     - uploaded-ia:/mnt/volumes/statics/uploaded/ia
+    - ./overrides/geonode/fixtures:/usr/src/sigic_geonode/fixtures:ro
     # - ./django-geonode-mapstore-client:/usr/src/django-geonode-mapstore-client
   depends_on:
     db:

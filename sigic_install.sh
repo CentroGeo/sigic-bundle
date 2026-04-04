@@ -112,3 +112,21 @@ if echo "$PROFILES" | grep -q "oidc"; then
 
   cat .env | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
 fi
+
+
+# =========================
+# 🔹 importar fixtures geonode (si aplica)
+# =========================
+
+if echo "$PROFILES" | grep -q "geonode"; then
+  echo "📦 Detectado profile geonode → cargando fixtures Django..."
+
+  echo "⏳ Esperando Django..."
+  sleep 20
+
+  echo "🚀 Cargando fixture socialaccount..."
+
+  docker exec django4${COMPOSE_PROJECT_NAME} bash -c "python manage.py loaddata /usr/src/sigic_geonode/fixtures/socialaccount.json" || true
+
+  echo "✅ Fixture cargado"
+fi
