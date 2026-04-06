@@ -10,8 +10,8 @@
   "usefrontendadmin": true,
   "usefrontendapp": true,
 
-  "enableiaproxy": false,
-  "enableiadb": false,
+  "enableiaproxy": true,
+  "enableiadb": true,
 
-  "profiles": ["geonode", "oidc", "frontend"]
+  "profiles": ["geonode", "oidc", "frontend", "ia"]
 }
