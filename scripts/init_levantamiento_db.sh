@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-echo "🔍 Verificando base de datos Levantamiento..."
-if [ "${ENABLE_LEVANTAMIENTO_PROXY,,}" != "true" ]; then
-  echo "🟡 ENABLE_LEVANTAMIENTO_PROXY=False, no se creará la base."
-  exit 0
-fi
+# echo "🔍 Verificando base de datos Levantamiento..."
+# if [ "${ENABLE_LEVANTAMIENTO_PROXY}" != "True" ]; then
+#   echo "🟡 ENABLE_LEVANTAMIENTO_PROXY=False, no se creará la base."
+#   exit 0
+# fi
 
 DB_HOST="${DB_HOST:-db}"
 DB_PORT="${DB_PORT:-5432}"
