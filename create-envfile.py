@@ -107,7 +107,7 @@ def generate_env_file(args):
 
         enableiaproxy = _jsfile.get("enableiaproxy", args.enableiaproxy)
         _vals_to_replace["enableiaproxy"] = (
-            True if enableiaproxy else ''
+            True if enableiaproxy else False
         )
 
         enablelevantamientoproxy = _jsfile.get("enablelevantamientoproxy", args.enablelevantamientoproxy)
@@ -267,6 +267,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--geonodepwd", help="GeoNode admin password")
     parser.add_argument("--geoserverpwd", help="Geoserver admin password")
+    parser.add_argument("--levantamientodbpwd", help="Geoserver admin password")
     parser.add_argument("--pgpwd", help="PostgreSQL password")
     parser.add_argument("--dbpwd", help="GeoNode DB user password")
     parser.add_argument("--geodbpwd", help="Geodatabase user password")
