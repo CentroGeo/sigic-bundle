@@ -255,13 +255,14 @@ services:
       - sigicnetwork
     environment:
       ENABLE_LEVANTAMIENTO_DB: "True"
-      DB_NAME: ${LEVANTAMIENTO_DB_NAME}
+
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_HOST: ${DATABASE_HOST}
       DB_PORT: ${DATABASE_PORT}
-      IA_USER: ${LEVANTAMIENTO_DB_USER:-iauser}
-      IA_PASSWORD: ${LEVANTAMIENTO_DB_PASSWORD}
+      LEVANTAMIENTO_DB_NAME: ${LEVANTAMIENTO_DB_NAME}
+      LEVANTAMIENTO_DB_USER: ${LEVANTAMIENTO_DB_USER:-iauser}
+      LEVANTAMIENTO_DB_PASSWORD: ${LEVANTAMIENTO_DB_PASSWORD}
     volumes:
       - ./scripts/init_levantamiento_db.sh:/init_levantamiento_db.sh:ro
     entrypoint: [ "/bin/bash", "/init_levantamiento_db.sh" ]

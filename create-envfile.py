@@ -330,13 +330,24 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if not args.confirmation:
+    env_path = os.path.join(dir_path, ".env")
+
+    # si no existe .env → generar sin preguntar
+    if not os.path.exists(env_path):
         generate_env_file(args)
+
+    # si existe y se pasó --noinput → sobrescribir sin preguntar
+    elif not args.confirmation:
+        generate_env_file(args)
+
+    # si existe → preguntar
     else:
         overwrite_env = input(
-            "This action will overwrite any existing .env file. Do you wish to continue? (y/n)"
-        )
-        if overwrite_env not in ["y", "n"]:
-            logger.error("Please enter a valid response")
+            "Esta acción puede sobreescribir el archivo .env existente. Deseas sobreescribirlo? (y/N)"
+        ).strip().lower()
+
+        # ENTER vacío = "n"
         if overwrite_env == "y":
             generate_env_file(args)
+        else:
+            logger.info("Se conserva el .env existente")
