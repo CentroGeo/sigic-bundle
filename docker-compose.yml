@@ -255,7 +255,6 @@ services:
       - sigicnetwork
     environment:
       ENABLE_LEVANTAMIENTO_DB: "True"
-
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_HOST: ${DATABASE_HOST}
