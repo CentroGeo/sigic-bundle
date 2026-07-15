@@ -1,6 +1,9 @@
 # Common Django template for GeoNode and Celery services below
 x-common-django: &default-common-django
-  image: ${COMPOSE_PROJECT_NAME}/geonode:${GEONODE_BASE_IMAGE_VERSION}
+  image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geonode:latest
+  build:
+    context: ./geonode
+    dockerfile: Dockerfile
   restart: unless-stopped
   env_file:
     - .env
@@ -11,25 +14,23 @@ x-common-django: &default-common-django
     - data:/data
     - tmp:/tmp
     - uploaded-ia:/mnt/volumes/statics/uploaded/ia
+    - ./overrides/geonode/fixtures:/usr/src/sigic_geonode/fixtures:ro
     # - ./django-geonode-mapstore-client:/usr/src/django-geonode-mapstore-client
   depends_on:
     db:
       condition: service_healthy
 
 services:
-  # Our custom django application. It includes Geonode.
+  # Our custom django application. It includes GeoNode.
   django:
     profiles: ["geonode"]
     <<: *default-common-django
-    build:
-      context: ./geonode
-      dockerfile: Dockerfile
     container_name: django4${COMPOSE_PROJECT_NAME}
     healthcheck:
       test: "curl -m 10 --fail --silent --write-out 'HTTP CODE : %{http_code}\n' --output /dev/null http://django:8000/"
       start_period: 60s
       interval: 60s
-      timeout: 30s
+      timeout: 120s
       retries: 4
     environment:
       - IS_CELERY=False
@@ -55,9 +56,9 @@ services:
 
   # Nginx is serving django static and media files and proxies to django and geonode
   nginx:
-    profiles: ["core", "geonode"]
+    profiles: ["core", "geonode", "nginx"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/nginx:${NGINX_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_nginx:${NGINX_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/nginx
       dockerfile: Dockerfile
@@ -75,10 +76,12 @@ services:
       - nginx-confd:/etc/nginx
       - nginx-certificates:/geonode-certificates
       - statics:/mnt/volumes/statics
+      - uploaded-ia:/mnt/volumes/statics/uploaded/ia
       - ${ENABLE_OIDC_PROXY:+./overrides/nginx/z-keycloak-proxy.conf:/etc/nginx/sites-enabled/z-keycloak-proxy.conf:ro}
       - ${ENABLE_ADMIN_PROXY:+./overrides/nginx/z-frontend-admin.conf:/etc/nginx/sites-enabled/z-frontend-admin.conf:ro}
       - ${ENABLE_APP_PROXY:+./overrides/nginx/z-frontend-app.conf:/etc/nginx/sites-enabled/z-frontend-app.conf:ro}
       - ${ENABLE_IA_PROXY:+./overrides/nginx/z-ia-proxy.conf:/etc/nginx/sites-enabled/z-ia-proxy.conf:ro}
+      # - ${ENABLE_LEVANTAMIENTO_PROXY:+./overrides/nginx/z-levantamiento-proxy.conf:/etc/nginx/sites-enabled/z-levantamiento-proxy.conf:ro}
 
     restart: unless-stopped
     networks:
@@ -104,7 +107,7 @@ services:
   letsencrypt:
     profiles: ["https"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/letsencrypt:${LETSENCRYPT_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_letsencrypt:${LETSENCRYPT_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/letsencrypt
       dockerfile: Dockerfile
@@ -119,11 +122,11 @@ services:
     networks:
       - sigicnetwork
 
-  # Geoserver backend
+  # GeoServer backend
   geoserver:
     profiles: ["geonode"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/geoserver:${GEOSERVER_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geoserver:${GEOSERVER_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/geoserver
       dockerfile: Dockerfile
@@ -139,7 +142,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8080:8080"
+      - "${GEOSERVER_PORT}:8080"
     volumes:
       - statics:/mnt/volumes/statics
       - geoserver-data-dir:/geoserver_data/data
@@ -157,7 +160,7 @@ services:
 
   data-dir-conf:
     profiles: ["geonode"]
-    image: ${COMPOSE_PROJECT_NAME}/geoserver_data:${GEOSERVER_DATA_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_geoserver_data:${GEOSERVER_DATA_BASE_IMAGE_VERSION}
     platform: linux/amd64
     build:
       context: ./geonode/docker/geoserver_data
@@ -176,9 +179,9 @@ services:
 
   # PostGIS database.
   db:
-    profiles: ["core", "geonode", "llm"]
+    profiles: ["core", "geonode", "ia", "ia-db"]
     platform: linux/amd64
-    image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     build:
       context: ./geonode/docker/postgresql
       dockerfile: Dockerfile
@@ -195,7 +198,7 @@ services:
     healthcheck:
       test: "pg_isready -d postgres -U postgres"
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:5432"
     expose:
       - "5432"
     networks: [sigicnetwork]
@@ -203,7 +206,7 @@ services:
   # Extra initialization for Keycloak database objects
   init-keycloak-db:
     profiles: ["oidc"]
-    image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
         condition: service_healthy
@@ -219,15 +222,15 @@ services:
 
   # Extra initialization for Keycloak database objects
   init-ia-db:
-    profiles: [ "llm" ]
-    image: ${COMPOSE_PROJECT_NAME}/postgis:${POSTGRES_BASE_IMAGE_VERSION}
+    profiles: ["ia", "ia-db"]
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
     depends_on:
       db:
         condition: service_healthy
     networks:
       - sigicnetwork
     environment:
-      ENABLE_IA_PROXY: ${ENABLE_IA_PROXY}
+      ENABLE_IA_DB: "True"
       DB_NAME: ${IA_DJANGO_DB_NAME}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -240,9 +243,32 @@ services:
     entrypoint: [ "/bin/bash", "/init_ia_db.sh" ]
     restart: "no"
 
+  # Extra initialization for Keycloak database objects
+  init-levantamiento-db:
+    profiles: ["levantamiento", "levantamiento-db"]
+    image: ghcr.io/centrogeo/sigic-geonode-wrapper/sigic_postgresql:${POSTGRES_BASE_IMAGE_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sigicnetwork
+    environment:
+      ENABLE_LEVANTAMIENTO_DB: "True"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: ${DATABASE_HOST}
+      DB_PORT: ${DATABASE_PORT}
+      LEVANTAMIENTO_DB_NAME: ${LEVANTAMIENTO_DB_NAME}
+      LEVANTAMIENTO_DB_USER: ${LEVANTAMIENTO_DB_USER:-iauser}
+      LEVANTAMIENTO_DB_PASSWORD: ${LEVANTAMIENTO_DB_PASSWORD}
+    volumes:
+      - ./scripts/init_levantamiento_db.sh:/init_levantamiento_db.sh:ro
+    entrypoint: [ "/bin/bash", "/init_levantamiento_db.sh" ]
+    restart: "no"
+
   # Vanilla RabbitMQ service. This is needed by celery
   rabbitmq:
-    profiles: [ "geonode" ]
+    profiles: ["geonode"]
     image: rabbitmq:3-alpine
     container_name: rabbitmq4${COMPOSE_PROJECT_NAME}
     volumes:
@@ -251,9 +277,10 @@ services:
     networks:
       - sigicnetwork
 
+  # Keycloak OIDC server
   keycloak:
     profiles: ["oidc"]
-    image: ${COMPOSE_PROJECT_NAME}/keycloak:latest
+    image: ghcr.io/centrogeo/sigic-keycloak/keycloak:${KEYCLOAK_BASE_IMAGE_VERSION}
     build:
       context: ./keycloak/keycloak
       dockerfile: Dockerfile
@@ -268,41 +295,54 @@ services:
         condition: service_completed_successfully
     environment:
       KC_CACHE: local
+      KC_DB: postgres
+      KC_DB_URL_HOST: ${KC_DB_URL_HOST}
+      KC_DB_URL_DATABASE: ${KC_DB_URL_DATABASE}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT:-true}
+      KC_HTTP_RELATIVE_PATH: ${KC_HTTP_RELATIVE_PATH:-/iam}
+      KC_HTTP_MANAGEMENT_RELATIVE_PATH: ${KC_HTTP_MANAGEMENT_RELATIVE_PATH:-/iam}
+      KC_HTTP_ENABLED: true
+      VIRTUAL_HOST: ${KC_HOSTNAME}
+      VIRTUAL_PORT: 8080
       JGROUPS_DISCOVERY_PROTOCOL: DNS_PING
       JGROUPS_DISCOVERY_PROPERTIES: "dns_query=localhost"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - ./overrides/keycloak/${KEYCLOAK_IMPORT_SUBDIR:-.}:/opt/keycloak/data/import
+      - ./scripts/import-keycloak-clients.sh:/scripts/import-keycloak-clients.sh:ro
     networks: [sigicnetwork]
 
+  # Frontend for admin users
   frontend-admin:
-    profiles: ["frontend-admin"]
-    image: ${COMPOSE_PROJECT_NAME}/frontend-admin:latest
+    profiles: ["frontend", "frontend-admin"]
+    image: ghcr.io/centrogeo/sigic-nuxt-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
-        IS_NUXT_SUBMODULE: true
-        NUXT_PUBLIC_APP_BASE_PATH: /admin/
-        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/admin/api/auth
-        NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
-    container_name: fendadmin4${COMPOSE_PROJECT_NAME}
+    container_name: frontendadmin4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
       - .env
     ports:
-      - "3001:3000"
+      - "${FRONTEND_ADMIN_PORT}:3000"
     expose:
       - "3000"
     environment:
       NODE_ENV: production
+      NODE_OPTIONS: "--max-old-space-size=512"
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_API: ${NGINX_BASE_URL}/api/v2
       NUXT_PUBLIC_GEOSERVER_URL: ${NGINX_BASE_URL}/gs
-      NUXT_PUBLIC_IA_BACKEND_URL: ${NGINX_BASE_URL}/llmb
-      NUXT_PUBLIC_DEFAULT_PAGE: /
-      NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ''
+      NUXT_PUBLIC_IA_BACKEND_URL: ${IA_BACKEND_URL}
+      NUXT_PUBLIC_LEVANTAMIENTO_BACKEND_URL: ${NUXT_PUBLIC_LEVANTAMIENTO_BACKEND_URL}
+      NUXT_PUBLIC_DEFAULT_PAGE: ${NUXT_PUBLIC_DEFAULT_PAGE:-/}
+      NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ${NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER:-''}
+      NUXT_PUBLIC_KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER:-${NGINX_BASE_URL}/iam/realms/sigic}
       NUXT_AUTH_ORIGIN: ${NUXT_AUTH_ORIGIN}
       NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/admin/api/auth
       KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
@@ -310,69 +350,71 @@ services:
       NUXT_PUBLIC_ENABLE_CATALOGO_VISTA: true
       NUXT_PUBLIC_ENABLE_CATALOGO_CARGA: true
       NUXT_PUBLIC_ENABLE_CONSULTA: true
-      NUXT_PUBLIC_ENABLE_IAA: true
+      NUXT_PUBLIC_ENABLE_IAA: ${ENABLE_IA_PROXY:-false}
+      NUXT_PUBLIC_ENABLE_LEVANTAMIENTO: ${ENABLE_LEVANTAMIENTO_PROXY:-false}
       KEYCLOAK_CLIENT_ID: ${ADMIN_KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${ADMIN_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${ADMIN_NUXT_AUTH_SECRET}
-      NUXT_PUBLIC_APP_BASE_PATH: /admin/
+      NUXT_APP_BASE_URL: /admin/
       NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
+  # Frontend for end users
   frontend-app:
-    profiles: ["frontend-app"]
-    image: ${COMPOSE_PROJECT_NAME}/frontend-app:latest
+    profiles: ["frontend", "frontend-app"]
+    image: ghcr.io/centrogeo/sigic-nuxt-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
-        IS_NUXT_SUBMODULE: true
-        NUXT_PUBLIC_APP_BASE_PATH: /app/
-        NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/app/api/auth
-        NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
-    container_name: fendapp4${COMPOSE_PROJECT_NAME}
+    container_name: frontendapp4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     env_file:
       - .env
     ports:
-      - "3002:3000"
+      - "${FRONTEND_APP_PORT}:3000"
     expose:
       - "3000"
     environment:
       NODE_ENV: production
+      NODE_OPTIONS: "--max-old-space-size=512"
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_API: ${NGINX_BASE_URL}/api/v2
       NUXT_PUBLIC_GEOSERVER_URL: ${NGINX_BASE_URL}/gs
-      NUXT_PUBLIC_IA_BACKEND_URL: ${NGINX_BASE_URL}/llmb
-      NUXT_PUBLIC_DEFAULT_PAGE: /
-      NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ''
+      NUXT_PUBLIC_IA_BACKEND_URL: ${IA_BACKEND_URL}
+      NUXT_PUBLIC_LEVANTAMIENTO_BACKEND_URL: ${NUXT_PUBLIC_LEVANTAMIENTO_BACKEND_URL}
+      NUXT_PUBLIC_DEFAULT_PAGE: ${NUXT_PUBLIC_DEFAULT_PAGE:-/}
+      NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER: ${NUXT_PUBLIC_GEONODE_API_DEFAULT_FILTER:-''}
+      NUXT_PUBLIC_KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER:-${NGINX_BASE_URL}/iam/realms/sigic}
       NUXT_AUTH_ORIGIN: ${NUXT_AUTH_ORIGIN}
       NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/app/api/auth
-      KEYCLOAK_ISSUER: ${NGINX_BASE_URL}/iam/realms/sigic
+      KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
       NUXT_PUBLIC_ENABLE_AUTH: false
       NUXT_PUBLIC_ENABLE_CATALOGO_VISTA: false
       NUXT_PUBLIC_ENABLE_CATALOGO_CARGA: false
       NUXT_PUBLIC_ENABLE_CONSULTA: true
       NUXT_PUBLIC_ENABLE_IAA: false
+      NUXT_PUBLIC_ENABLE_LEVANTAMIENTO: false
       KEYCLOAK_CLIENT_ID: ${APP_KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${APP_KEYCLOAK_CLIENT_SECRET}
       NUXT_AUTH_SECRET: ${APP_NUXT_AUTH_SECRET}
-      NUXT_PUBLIC_APP_BASE_PATH: /app/
+      NUXT_APP_BASE_URL: /app/
       NUXT_PUBLIC_OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1}"
     networks: [sigicnetwork]
 
+  # Redis service for IA engine and queue
   redis:
-    profiles: ["llm"]
+    profiles: ["ia", "ia-lb"]
     image: redis:latest
     container_name: redis4${COMPOSE_PROJECT_NAME}
     expose:
       - "6379"
     networks: [sigicnetwork]
 
+  # IA Engine service
   ia-engine:
-    profiles: ["llm"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-engine:latest
+    profiles: ["ia", "ia-engine"]
+    image: ghcr.io/centrogeo/sigic-ia-engine/sigic-ia-engine:latest
     build:
       context: ./ia-engine
       dockerfile: Dockerfile
@@ -400,12 +442,14 @@ services:
       OLLAMA_HOST: "${OLLAMA_HOST:-ollama}"
       OLLAMA_PORT: "${OLLAMA_PORT:-11434}"
       OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
+      SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
     entrypoint: sh ./scripts/entrypoint.sh
     networks: [sigicnetwork]
 
+  # IA Queue service
   ia-queue:
-    profiles: ["llm"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-queue:latest
+    profiles: ["ia", "ia-lb"]
+    image: ghcr.io/centrogeo/sigic-ia-loadbalancer/ia-queue:latest
     build:
       context: ia-lb/redis_queue
       dockerfile: Dockerfile
@@ -426,15 +470,15 @@ services:
       OLLAMA_TIMEOUT: "${OLLAMA_PORT:-600}"
     networks: [sigicnetwork]
 
+  # IA Load Balancer service
   ia-lb:
-    profiles: ["llm"]
-    image: ${COMPOSE_PROJECT_NAME}/ia-lb:latest
+    profiles: ["ia", "ia-lb"]
+    image: ghcr.io/centrogeo/sigic-ia-loadbalancer/ia-lb:latest
     build:
       context: ./ia-lb/nginx-conf
       dockerfile: Dockerfile
     container_name: ia-lb4${COMPOSE_PROJECT_NAME}
     depends_on:
-      - ia-engine
       - ia-queue
     ports:
       - "81:80"
@@ -445,19 +489,19 @@ services:
       REDIS_PORT: 6379
       OIDC_CONFIG_URL: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/.well-known/openid-configuration
       NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
+      IA_ENGINE_HOSTS: ${IA_ENGINE_HOSTS:-ia-engine:8000}
+      IA_ENGINE_SERVERS: ${IA_ENGINE_SERVERS:-ia-engine:8000}
     # volumes:
     #   - /etc/resolv.conf:/etc/resolv.conf:ro
     networks: [sigicnetwork]
 
-  # Servicio Ollama opcional (solo se activa si se usa el perfil "llm-ollama")
+  # Ollama LLM service
   ollama:
-    profiles: ["ollama"]
-    image: ollama/ollama
+    profiles: ["ia", "ollama"]
+    image: ghcr.io/centrogeo/sigic-ia-engine/sigic-ia-ollama:latest
     build:
       context: ./ia-engine
       dockerfile: Dockerfile.ollama
-      args:
-        OLLAMA_MODEL: "${OLLAMA_MODEL:-deepseek-r1:latest}"
     container_name: ollama4${COMPOSE_PROJECT_NAME}
     ports:
       - "${OLLAMA_PORT:-11434}:11434"
@@ -465,7 +509,6 @@ services:
       - "${OLLAMA_PORT:-11434}"
     volumes:
       - ollama-data:/root/.ollama
-      # Monta el dispositivo NVIDIA solo si existe (evita error en hosts sin GPU)
       - /dev:/dev
     environment:
       OLLAMA_KEEP_ALIVE: "50m"
@@ -482,25 +525,46 @@ services:
     restart: unless-stopped
     networks:
       - sigicnetwork
-    entrypoint: |
-      sh -eu -c '
-        echo "🔍 Verificando GPU disponible..."
-        if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
-          export OLLAMA_USE_GPU=1
-          echo "✅ GPU detectada"
-        else
-          export OLLAMA_USE_GPU=0
-          echo "⚙️  Ejecutando en CPU"
-        fi
 
-        echo "🏁 Iniciando servidor Ollama..."
-        echo "🔥 Precargando modelo ${OLLAMA_MODEL}..."
-        ollama run "${OLLAMA_MODEL}" "Hola" >/dev/null 2>&1 || true
-        exec ollama serve
-      '
-
-
-
+  # Levantamiento
+  levantamiento:
+    profiles: [ "levantamiento", "levantamiento-api"]
+    image: ghcr.io/centrogeo/sigic-levantamiento:latest
+    build:
+      context: ./levantamiento
+      dockerfile: Dockerfile
+    container_name: levantamiento4${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
+    expose:
+      - "3000"
+    ports:
+      - "${PORT:-3003}:${PORT:-3000}"
+    environment:
+      PORT: ${LEVANTAMIENTO_PORT:-3000}
+      PG_HOST: ${DATABASE_HOST}
+      PG_PORT: ${DATABASE_PORT}
+      PG_USER: ${LEVANTAMIENTO_DB_USER}
+      PG_PASSWORD: ${LEVANTAMIENTO_DB_PASSWORD}
+      PG_DATABASE: ${LEVANTAMIENTO_DB_NAME}
+      OVERPASS_URLS: ${LEVANTAMIENTO_OVERPASS_URLS:-https://overpass.kumi.systems/api/interpreter,https://overpass-api.de/api/interpreter,https://lz4.overpass-api.de/api/interpreter}
+      OVERPASS_PING_TIMEOUT_MS: ${LEVANTAMIENTO_OVERPASS_PING_TIMEOUT_MS:-4000}
+      OVERPASS_MIRROR_TTL_MS: ${LEVANTAMIENTO_OVERPASS_MIRROR_TTL_MS:-600000}
+      OSM_OVERPASS_TIMEOUT: ${LEVANTAMIENTO_OSM_OVERPASS_TIMEOUT:-90}
+      CACHE_TTL_SEC: ${LEVANTAMIENTO_CACHE_TTL_SEC:-600}
+      SOCIALACCOUNT_OIDC_CERTS: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}/protocol/openid-connect/certs
+      SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
+      SMTP_HOST: ${LEVANTAMIENTO_SMTP_HOST}
+      SMTP_PORT: ${LEVANTAMIENTO_SMTP_PORT}
+      SMTP_SECURE: ${LEVANTAMIENTO_SMTP_SECURE:-true}
+      SMTP_USER: ${LEVANTAMIENTO_SMTP_USER}
+      SMTP_PASS: ${LEVANTAMIENTO_SMTP_PASS}
+      SMTP_FROM_NAME: ${LEVANTAMIENTO_SMTP_FROM_NAME}
+      SMTP_FROM_EMAIL: ${LEVANTAMIENTO_SMTP_FROM_EMAIL}
+    volumes:
+      - levantamiento-uploads:/usr/src/app/uploads
+      - levantamiento-downloads:/usr/src/app/downloads
+    networks:
+      - sigicnetwork
 
 networks:
   sigicnetwork:
@@ -535,3 +599,7 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME}-statics-uploaded-ia
   ollama-data:
     name: ${COMPOSE_PROJECT_NAME}-ollama_data
+  levantamiento-uploads:
+    name: ${COMPOSE_PROJECT_NAME}-levantamiento-uploads
+  levantamiento-downloads:
+    name: ${COMPOSE_PROJECT_NAME}-levantamiento-downloads

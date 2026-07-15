@@ -95,19 +95,34 @@ def generate_env_file(args):
             True if useoidc else False
         )
 
-        usefeadmin = _jsfile.get("usefeadmin", args.usefeadmin)
-        _vals_to_replace["usefeadmin"] = (
-            True if usefeadmin else False
+        usefrontendadmin = _jsfile.get("usefrontendadmin", args.usefrontendadmin)
+        _vals_to_replace["usefrontendadmin"] = (
+            True if usefrontendadmin else False
         )
 
-        usefeapp = _jsfile.get("usefeapp", args.usefeapp)
-        _vals_to_replace["usefeapp"] = (
-            True if usefeapp else False
+        usefrontendapp = _jsfile.get("usefrontendapp", args.usefrontendapp)
+        _vals_to_replace["usefrontendapp"] = (
+            True if usefrontendapp else False
         )
 
-        useia = _jsfile.get("useia", args.useia)
-        _vals_to_replace["useia"] = (
-            True if useia else False
+        enableiaproxy = _jsfile.get("enableiaproxy", args.enableiaproxy)
+        _vals_to_replace["enableiaproxy"] = (
+            True if enableiaproxy else False
+        )
+
+        enablelevantamientoproxy = _jsfile.get("enablelevantamientoproxy", args.enablelevantamientoproxy)
+        _vals_to_replace["enablelevantamientoproxy"] = (
+            "" if enablelevantamientoproxy else "# "
+        )
+
+        enableiadb = _jsfile.get("enableiadb", args.enableiadb)
+        _vals_to_replace["enableiadb"] = (
+            True if enableiadb else False
+        )
+
+        enablelevantamientodb = _jsfile.get("enablelevantamientodb", args.enablelevantamientodb)
+        _vals_to_replace["enablelevantamientodb"] = (
+            True if enablelevantamientodb else False
         )
 
         oidc_provider_url = _jsfile.get("oidc_provider_url", args.oidc_provider_url)
@@ -117,8 +132,6 @@ def generate_env_file(args):
         _vals_to_replace["oidc_provider_url"] = (
             oidc_provider_url if oidc_provider_url else "https://iam.dev.sigic.mx/realms/sigic"
         )
-
-        _vals_to_replace["http_scheme"] = tcp
 
         _vals_to_replace["http_host"] = _jsfile.get("hostname", args.hostname)
         _vals_to_replace["https_host"] = (
@@ -134,6 +147,8 @@ def generate_env_file(args):
         )
 
         nginxproto = "https" if args.externalhttps else tcp
+
+        _vals_to_replace["http_scheme"] = nginxproto
 
         _vals_to_replace["siteurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}{subpath}"
         _vals_to_replace["nginxbaseurl"] = f"{nginxproto}://{_jsfile.get('hostname', args.hostname)}"
@@ -154,7 +169,7 @@ def generate_env_file(args):
             else True
         )
         _vals_to_replace["email"] = _jsfile.get("email", args.email)
-        _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath)
+        _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath) if args.homepath else "app"
 
         if tcp == "https" and not _vals_to_replace["email"]:
             raise Exception("With HTTPS enabled, the email parameter is required")
@@ -164,7 +179,7 @@ def generate_env_file(args):
         return {**_jsfile, **_vals_to_replace}
 
     for key, val in _get_vals_to_replace(args).items():
-        if key in ["subpath", "homepath"]:
+        if key in ["subpath", "homepath", "enablelevantamientoproxy"]:
             _val = "" if not val else str(val)
         else:
             _val = val or "".join(random.choice(_simple_chars) for _ in range(15))
@@ -179,6 +194,24 @@ def generate_env_file(args):
     with open(f"{dir_path}/.env", "w+") as output_env:
         output_env.write(_sample_file)
     logger.info(f".env file created: {dir_path}/.env")
+
+    # 👇 ejecutar generación de JSONs de Keycloak automáticamente
+    try:
+        import subprocess
+
+        script_path = os.path.join(dir_path, "create-keycloak-jsons.py")
+
+        if os.path.isfile(script_path):
+            subprocess.run(
+                [sys.executable, script_path],
+                check=True,
+            )
+            logger.info("Keycloak JSONs generated successfully")
+        else:
+            logger.warning(f"No se encontró create-keycloak-jsons.py en {dir_path}")
+
+    except Exception as e:
+        logger.error(f"Error generating Keycloak JSONs: {e}")
 
 
 if __name__ == "__main__":
@@ -234,6 +267,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--geonodepwd", help="GeoNode admin password")
     parser.add_argument("--geoserverpwd", help="Geoserver admin password")
+    parser.add_argument("--levantamientodbpwd", help="Geoserver admin password")
     parser.add_argument("--pgpwd", help="PostgreSQL password")
     parser.add_argument("--dbpwd", help="GeoNode DB user password")
     parser.add_argument("--geodbpwd", help="Geodatabase user password")
@@ -262,36 +296,59 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--usefeadmin", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usefrontendadmin", action="store_true", default=False, help="If provided, bundled frontend admin is used"
     )
 
     parser.add_argument(
-        "--usefeapp", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--usefrontendapp", action="store_true", default=False, help="If provided, bundled frontend app is used"
     )
     parser.add_argument(
-        "--useia", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--enableiaproxy", action="store_true", default=False, help="If provided, bundled ia proxy is used"
     )
     parser.add_argument(
-        "--externalhttps", action="store_true", default=False, help="If provided, bundled keycloak is used"
+        "--enablelevantamientoproxy", action="store_true", default=False, help="If provided, bundled levantamiento proxy is used"
+    )
+    parser.add_argument(
+        "--enableiadb", action="store_true", default=False, help="If provided, bundled ia db is used"
+    )
+    parser.add_argument(
+        "--enablelevantamientodb", action="store_true", default=False, help="If provided, bundled levantamiento db is used"
+    )
+    parser.add_argument(
+        "--externalhttps", action="store_true", default=False, help="If provided, external https is used"
     )
 
     parser.add_argument("--kcadm_cid", help="Keycloak admin client id")
     parser.add_argument("--kcadm_secret", help="Keycloak admin client secret")
+    parser.add_argument("--kcgn_cid", help="Keycloak geonode client id")
+    parser.add_argument("--kcgn_secret", help="Keycloak geonode client secret")
     parser.add_argument("--kcapp_cid", help="Keycloak public app client id")
     parser.add_argument("--kcapp_secret", help="Keycloak public app client secret")
+    parser.add_argument("--kckadm_password", help="Keycloak kadmin password")
     parser.add_argument("--adm_nuxt_auth_secret", help="Nuxt admin auth secret")
     parser.add_argument("--app_nuxt_auth_secret", help="Nuxt public auth secret")
     parser.add_argument("--ia_db_password", help="IA engine database password")
 
     args = parser.parse_args()
 
-    if not args.confirmation:
+    env_path = os.path.join(dir_path, ".env")
+
+    # si no existe .env → generar sin preguntar
+    if not os.path.exists(env_path):
         generate_env_file(args)
+
+    # si existe y se pasó --noinput → sobrescribir sin preguntar
+    elif not args.confirmation:
+        generate_env_file(args)
+
+    # si existe → preguntar
     else:
         overwrite_env = input(
-            "This action will overwrite any existing .env file. Do you wish to continue? (y/n)"
-        )
-        if overwrite_env not in ["y", "n"]:
-            logger.error("Please enter a valid response")
+            "Esta acción puede sobreescribir el archivo .env existente. Deseas sobreescribirlo? (y/N)"
+        ).strip().lower()
+
+        # ENTER vacío = "n"
         if overwrite_env == "y":
             generate_env_file(args)
+        else:
+            logger.info("Se conserva el .env existente")

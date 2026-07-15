@@ -1,0 +1,58 @@
+services:
+  nginx:
+    networks:
+      sigicnetwork:
+      sigic-proxy:
+
+  frontend-admin:
+    image: sigic-frontend-admin:${COMPOSE_PROJECT_NAME}
+    build:
+      context: .
+      dockerfile: overrides/frontend/Dockerfile
+      args:
+        PLATFORM_NAME: ${PLATFORM_NAME}
+        NUXT_PUBLIC_APP_BASE_PATH: /admin/
+
+  frontend-app:
+    image: sigic-frontend-app:${COMPOSE_PROJECT_NAME}
+    build:
+      context: .
+      dockerfile: overrides/frontend/Dockerfile
+      args:
+        PLATFORM_NAME: ${PLATFORM_NAME}
+        NUXT_PUBLIC_APP_BASE_PATH: /app/
+  django:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+  celery:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+  geoserver:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+  keycloak:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+  ia-engine:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+  ia-queue:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+  ia-lb:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+  levantamiento:
+    extra_hosts:
+      - "${PLATFORM_HOST}:host-gateway"
+
+networks:
+  sigic-proxy:
+    external: true
