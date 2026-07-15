@@ -1,0 +1,15 @@
+{
+  "platform": "gdm",
+  "description": "GDM - Golfo de México",
+  "extends": "geonode-frontend-keycloak",
+  "overrides": {
+    "homepath": "admin",
+    "useoidc": true,
+    "usefrontendadmin": true,
+    "usefrontendapp": true,
+    "enableiaproxy": false,
+    "enableiadb": false,
+    "enablelevantamientoproxy": false,
+    "enablelevantamientodb": false
+  }
+}

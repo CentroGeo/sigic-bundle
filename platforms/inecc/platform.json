@@ -1,0 +1,15 @@
+{
+  "platform": "inecc",
+  "description": "INECC - Instituto Nacional de Ecología y Cambio Climático",
+  "extends": "geonode-frontend-keycloak",
+  "overrides": {
+    "homepath": "admin",
+    "useoidc": true,
+    "usefrontendadmin": true,
+    "usefrontendapp": true,
+    "enableiaproxy": false,
+    "enableiadb": false,
+    "enablelevantamientoproxy": false,
+    "enablelevantamientodb": false
+  }
+}
