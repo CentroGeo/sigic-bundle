@@ -332,7 +332,7 @@ services:
     expose:
       - "3000"
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       NODE_OPTIONS: "--max-old-space-size=512"
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
@@ -375,7 +375,7 @@ services:
     expose:
       - "3000"
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       NODE_OPTIONS: "--max-old-space-size=512"
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
