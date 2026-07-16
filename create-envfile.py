@@ -168,6 +168,11 @@ def generate_env_file(args):
             if _jsfile.get("env_type", args.env_type) in ["prod", "test"]
             else True
         )
+        _vals_to_replace["node_env"] = (
+            "production"
+            if _jsfile.get("env_type", args.env_type) in ["prod", "test"]
+            else "develop"
+        )
         _vals_to_replace["email"] = _jsfile.get("email", args.email)
         _vals_to_replace["homepath"] = _jsfile.get("homepath", args.homepath) if args.homepath else "app"
 
