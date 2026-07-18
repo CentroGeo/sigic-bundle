@@ -173,6 +173,7 @@ python3 create-envfile.py \
   $NOINPUT_FLAG
 
 if [ "$PLATFORM_MODE" = true ]; then
+  mkdir -p overrides/keycloak/${COMPOSE_PROJECT_NAME}
   cp overrides/keycloak/keycloak-realm-sigic.json \
      "overrides/keycloak/${COMPOSE_PROJECT_NAME}/keycloak-realm-sigic.json"
 fi
@@ -238,13 +239,13 @@ if [ "$PLATFORM_MODE" = true ]; then
 
   # crear red compartida si no existe
   docker network create sigic-proxy 2>/dev/null || true
-
   # arrancar nginx-proxy si no está corriendo (-p proxy fija el project name independiente de COMPOSE_PROJECT_NAME)
   docker compose -p proxy -f proxy/docker-compose.yml up -d --no-recreate nginx-proxy
 
-  # generar config nginx del proxy para esta plataforma+ambiente
-  mkdir -p proxy/conf.d
+  # generar config y stream nginx del proxy para esta plataforma+ambiente
+  mkdir -p proxy/conf.d proxy/stream.d
   PROXY_CONF="proxy/conf.d/${PLATFORM}-${ENVIRONMENT}.conf"
+  PROXY_STREAM_DEFAULT="proxy/stream.d/00-mappings.conf"
 
   # bloque puerto 80 — siempre presente
   cat > "$PROXY_CONF" << NGINXEOF
@@ -269,17 +270,24 @@ NGINXEOF
 
   echo "📄 Proxy config generado: $PROXY_CONF"
 
-  # SSL en modo plataforma es gestionado por Mario (Apache en 10.2.7.26).
-  # Mario termina SSL externamente y reenvía HTTP plano a nuestro nginx-proxy.
-  # Descomentar este bloque si en algún momento gestionamos nuestros propios certs.
-  # if [ "$HTTPS_MODE" = "externalhttps" ]; then
-  #   docker exec nginx-proxy nginx -s reload 2>/dev/null || true
-  #   docker compose -p proxy -f proxy/docker-compose.yml --profile certbot run --rm \
-  #     certbot certonly --webroot -w /var/www/acme-challenge \
-  #     --non-interactive --agree-tos -m "${EMAIL}" -d "${HOSTNAME}" --keep-until-expiring
-  #   # agregar bloque 443 ssl al proxy config...
-  #   echo "🔒 Bloque SSL agregado al proxy config"
-  # fi
+  # Initializar stream.d/00-default.conf si no existe
+  if [ ! -f "$PROXY_STREAM_DEFAULT" ]; then
+    cat > "$PROXY_STREAM_DEFAULT" << NGINXEOF
+map \$ssl_preread_server_name \$backend{
+}
+
+server {
+    listen 443;
+
+    proxy_pass $backend;
+    ssl_preread on;
+}
+NGINXEOF
+  fi
+  # Agregar nuevo host al mapping si no existe
+  if [ ! -z $(grep "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT") ]; then
+    sed "s/backend{/backend{\n    server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}/"
+  fi
 
   # En fresh install las imágenes de frontend no existen localmente — construirlas antes del up
   if ! docker image inspect "sigic-frontend-admin:${COMPOSE_PROJECT_NAME}" > /dev/null 2>&1; then
