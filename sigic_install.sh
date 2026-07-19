@@ -265,6 +265,12 @@ server {
         proxy_buffers              4 256k;
         proxy_busy_buffers_size    256k;
     }
+
+    stream {
+        resolver 127.0.0.11 valid=10s;  # Docker DNS resolver
+
+        include /etc/nginx/stream.d/*.conf;
+    }
 }
 NGINXEOF
 
@@ -286,7 +292,7 @@ NGINXEOF
   fi
   # Agregar nuevo host al mapping si no existe
   if ! $(grep -Fq "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
-    sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME};/" "$PROXY_STREAM_DEFAULT"
+    sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;/" "$PROXY_STREAM_DEFAULT"
   fi
 
   # En fresh install las imágenes de frontend no existen localmente — construirlas antes del up
