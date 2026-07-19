@@ -273,20 +273,20 @@ NGINXEOF
   # Initializar stream.d/00-default.conf si no existe
   if [ ! -f "$PROXY_STREAM_DEFAULT" ]; then
     cat > "$PROXY_STREAM_DEFAULT" << NGINXEOF
-map \$ssl_preread_server_name \$backend{
+map \$ssl_preread_server_name \$backend {
 }
 
 server {
     listen 443;
 
-    proxy_pass $backend;
+    proxy_pass \$backend;
     ssl_preread on;
 }
 NGINXEOF
   fi
   # Agregar nuevo host al mapping si no existe
   if ! $(grep -Fq "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
-    sed -i "s/backend{/backend{\n    server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}/" "$PROXY_STREAM_DEFAULT"
+    sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME};/" "$PROXY_STREAM_DEFAULT"
   fi
 
   # En fresh install las imágenes de frontend no existen localmente — construirlas antes del up
