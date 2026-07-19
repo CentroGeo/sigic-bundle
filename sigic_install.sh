@@ -285,8 +285,8 @@ server {
 NGINXEOF
   fi
   # Agregar nuevo host al mapping si no existe
-  if [ ! -z $(grep "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT") ]; then
-    sed "s/backend{/backend{\n    server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}/"
+  if ! $(grep -Fq "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
+    sed -i "s/backend{/backend{\n    server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}/" "$PROXY_STREAM_DEFAULT"
   fi
 
   # En fresh install las imágenes de frontend no existen localmente — construirlas antes del up
