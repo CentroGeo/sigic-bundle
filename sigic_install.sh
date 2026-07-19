@@ -116,12 +116,15 @@ HTTPS_FLAG=""
 case "$HTTPS_MODE" in
   https)
     HTTPS_FLAG="--https"
+    LETSENCRYPT_MODE="staging"
     ;;
   externalhttps)
     HTTPS_FLAG="--externalhttps"
+    LETSENCRYPT_MODE="production"
     ;;
   http|"")
     HTTPS_FLAG=""
+    LETSENCRYPT_MODE=disabled
     ;;
   *)
     echo "Modo HTTPS inválido: $HTTPS_MODE"
@@ -191,6 +194,8 @@ echo "🚀 Profiles: $PROFILES"
 # =========================
 
 if [ "$PLATFORM_MODE" = true ]; then
+  # setear letsencrypt según el http flag
+  sed -i "s/LETSENCRYPT_MODE=.*/LETSENCRYPT_MODE=${LETSENCRYPT_MODE}/" .env
   # En modo plataforma los contenedores no exponen puertos al host —
   # nginx-proxy los alcanza por nombre en la red sigic-proxy.
   # Vaciar las vars en .env evita conflictos si alguien corre compose directo.
@@ -297,7 +302,7 @@ server {
 NGINXEOF
   fi
   # Agregar nuevo host al mapping si no existe
-  if ! $(grep -Fq "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;" "$PROXY_STREAM_DEFAULT"); then
+  if ! $(grep -Fq "${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
     sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;/" "$PROXY_STREAM_DEFAULT"
     docker exec nginx-proxy nginx -s reload
   fi
