@@ -281,26 +281,6 @@ NGINXEOF
 
   echo "📄 Proxy config generado: $PROXY_CONF"
 
-  # Initializar stream.d/00-default.conf si no existe
-  if [ ! -f "$PROXY_STREAM_DEFAULT" ]; then
-    cat > "$PROXY_STREAM_DEFAULT" << NGINXEOF
-
-map \$ssl_preread_server_name \$backend {
-    default reject;
-}
-
-server {
-    listen 443;
-
-    if ($backend = reject) {
-        return 444;
-    }
-
-    proxy_pass \$backend;
-    ssl_preread on;
-}
-NGINXEOF
-  fi
   # Agregar nuevo host al mapping si no existe
   if ! $(grep -Fq "${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
     sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;/" "$PROXY_STREAM_DEFAULT"
