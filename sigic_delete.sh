@@ -23,6 +23,7 @@ if [ -n "$ARG1" ] && [ -d "platforms/$ARG1" ]; then
   PROJECT="${PLATFORM}-${ENVIRONMENT}"
   ENV_ACTIVE=".env.${PROJECT}"
   PROXY_CONF="proxy/conf.d/${PROJECT}.conf"
+  PROXY_STREAM_DEFAULT="proxy/stream.d/00-mappings.conf"
   KC_SUBDIR="overrides/keycloak/${PROJECT}"
 
   echo "🗑️  Eliminando plataforma: $PROJECT"
@@ -54,6 +55,12 @@ if [ -n "$ARG1" ] && [ -d "platforms/$ARG1" ]; then
     echo "🔧 Eliminando proxy config: $PROXY_CONF"
     rm -f "$PROXY_CONF"
     docker exec nginx-proxy nginx -s reload 2>/dev/null || true
+  fi
+
+  # eliminar host al mapping si es que existe
+  if $(grep -Fq "${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
+    sed -i "/${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}/d" "$PROXY_STREAM_DEFAULT"
+    docker exec nginx-proxy nginx -s reload
   fi
 
   # eliminar env file

@@ -297,7 +297,7 @@ server {
 NGINXEOF
   fi
   # Agregar nuevo host al mapping si no existe
-  if ! $(grep -Fq "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
+  if ! $(grep -Fq "server ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;" "$PROXY_STREAM_DEFAULT"); then
     sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;/" "$PROXY_STREAM_DEFAULT"
     docker exec nginx-proxy nginx -s reload
   fi
