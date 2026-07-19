@@ -388,5 +388,12 @@ if [ "$PLATFORM_MODE" = true ]; then
   COMPOSE_PROFILES=$PROFILES docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
 fi
 
-echo "🎉 SIGIC instalado con éxito!"
+case "$LETSENCRYPT_MODE" in
+    staging|production)
+        echo "🚀 Creando certificados SSL..."
+        COMPOSE_PROFILES=https docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
+        ;;
+esac
+
 cat .env | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
+echo "🎉 SIGIC instalado con éxito!"

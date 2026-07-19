@@ -53,6 +53,10 @@ services:
     extra_hosts:
       - "${PLATFORM_HOST}:host-gateway"
 
+  letsencrypt:
+    env_file:
+      - .env.${COMPOSE_PROJECT_NAME}
+
 networks:
   sigic-proxy:
     external: true
