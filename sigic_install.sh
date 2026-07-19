@@ -196,6 +196,11 @@ echo "🚀 Profiles: $PROFILES"
 if [ "$PLATFORM_MODE" = true ]; then
   # setear letsencrypt según el http flag
   sed -i "s/LETSENCRYPT_MODE=.*/LETSENCRYPT_MODE=${LETSENCRYPT_MODE}/" .env
+  case "$HTTPS_FLAG" in
+    --externalhttps|--https)
+      sed -i "s/^HTTPS_HOST=.*/HTTPS_HOST=${HOSTNAME}/" .env
+      ;;
+  esac
   # En modo plataforma los contenedores no exponen puertos al host —
   # nginx-proxy los alcanza por nombre en la red sigic-proxy.
   # Vaciar las vars en .env evita conflictos si alguien corre compose directo.
