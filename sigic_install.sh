@@ -270,12 +270,6 @@ server {
         proxy_buffers              4 256k;
         proxy_busy_buffers_size    256k;
     }
-
-    stream {
-        resolver 127.0.0.11 valid=10s;  # Docker DNS resolver
-
-        include /etc/nginx/stream.d/*.conf;
-    }
 }
 NGINXEOF
 
