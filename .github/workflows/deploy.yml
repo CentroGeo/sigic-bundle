@@ -1,0 +1,102 @@
+name: Deploy Platform
+
+# Trigger manual desde GitHub Actions UI.
+# Selecciona la plataforma (cliente) y el ambiente (dev/qa/prd) a desplegar.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Plataforma'
+        type: choice
+        required: true
+        options:
+          - idegeo
+          - conafor
+          - sedema
+      environment:
+        description: 'Ambiente'
+        type: choice
+        required: true
+        options:
+          - dev
+          - qa
+          - prd
+
+# Evita deploys simultáneos al mismo stack (platform+environment).
+# cancel-in-progress: false hace que el segundo deploy espere en cola
+# en lugar de cancelar el que está corriendo.
+concurrency:
+  group: deploy-${{ inputs.platform }}-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: ${{ inputs.platform }}-${{ inputs.environment }}
+    # Runner self-hosted en Nimbus (10.2.102.228), donde viven los stacks de dev y QA.
+    runs-on: [self-hosted, nimbus]
+    # 90 min para absorber cold starts de Django (migraciones) y Keycloak.
+    timeout-minutes: 90
+
+    steps:
+      # Protege contra deploys que sobreescriban trabajo en progreso en el servidor.
+      # Falla si hay archivos rastreados modificados (excluye submodules).
+      - name: Verificar estado del repo
+        run: |
+          cd /opt/sigic-bundle
+          SUBMODULE_PATHS=$(git config --file .gitmodules --get-regexp 'submodule\..*\.path' | awk '{print $2}')
+          DIRTY=$(git status --porcelain | grep -v '^??' | while IFS= read -r line; do
+            FPATH=$(echo "$line" | awk '{print $NF}')
+            echo "$SUBMODULE_PATHS" | grep -qx "$FPATH" || echo "$line"
+          done)
+          if [ -n "$DIRTY" ]; then
+            echo "❌ Hay cambios sin commitear en archivos rastreados de /opt/sigic-bundle:"
+            echo "$DIRTY"
+            echo "Commitea o descarta los cambios antes de desplegar."
+            exit 1
+          fi
+
+      # Actualiza el bundle y submodules a la rama desde la que se disparó el workflow.
+      - name: Sync bundle
+        run: |
+          cd /opt/sigic-bundle
+          git fetch origin
+          git checkout ${{ github.ref_name }}
+          git pull origin ${{ github.ref_name }}
+          git submodule update --init --recursive
+
+      # Delega toda la lógica al script existente:
+      # genera .env, preserva passwords, levanta docker compose,
+      # importa Keycloak y carga fixtures de Django.
+      - name: Deploy
+        run: |
+          cd /opt/sigic-bundle
+          ./sigic_install.sh ${{ inputs.platform }} ${{ inputs.environment }}
+
+      # Valida que el stack quedó levantado correctamente:
+      # - Que existan contenedores para el proyecto
+      # - Que no haya contenedores detenidos (excluye init-* que terminan por diseño)
+      - name: Verificar stack
+        run: |
+          PROJECT="${{ inputs.platform }}-${{ inputs.environment }}"
+          echo "📋 Estado del stack $PROJECT:"
+          docker ps -a --filter "label=com.docker.compose.project=$PROJECT" \
+            --format "table {{.Names}}\t{{.Status}}"
+
+          TOTAL=$(docker ps -a --filter "label=com.docker.compose.project=$PROJECT" -q | wc -l)
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "❌ No se encontraron contenedores para el proyecto $PROJECT"
+            echo "   Posible causa: COMPOSE_PROJECT_NAME no se fijó correctamente durante el install."
+            exit 1
+          fi
+
+          STOPPED=$(docker ps -a \
+            --filter "label=com.docker.compose.project=$PROJECT" \
+            --filter "status=exited" \
+            --format "{{.Names}}" | grep -v "init-" || true)
+
+          if [ -n "$STOPPED" ]; then
+            echo "❌ Contenedores detenidos inesperadamente:"
+            echo "$STOPPED"
+            exit 1
+          fi
+          echo "✅ Stack $PROJECT levantado correctamente ($TOTAL contenedores)"

@@ -1,0 +1,15 @@
+{
+  "platform": "idce",
+  "description": "IDCE - Infraestructura de Datos Cientificos Espaciales",
+  "extends": "geonode-frontend-keycloak",
+  "overrides": {
+    "homepath": "admin",
+    "useoidc": true,
+    "usefrontendadmin": true,
+    "usefrontendapp": true,
+    "enableiaproxy": false,
+    "enableiadb": false,
+    "enablelevantamientoproxy": false,
+    "enablelevantamientodb": false
+  }
+}

@@ -6,7 +6,8 @@ ADMIN_REALM="master"
 USER="kadmin"
 PASS="kadmin"
 
-REALM="sigic"
+REALM=$(echo "${KEYCLOAK_ISSUER:-}" | sed 's|.*/realms/||' | sed 's|/.*||')
+REALM=${REALM:-sigic}
 IMPORT_DIR="/opt/keycloak/data/import"
 
 # 🔐 LOGIN
@@ -23,16 +24,17 @@ IMPORT_DIR="/opt/keycloak/data/import"
 
 echo "Checking realm $REALM..."
 
-REALM_EXISTS=$(/opt/keycloak/bin/kcadm.sh get realms/$REALM 2>/dev/null || true)
-
-if [ -z "$REALM_EXISTS" ]; then
-  echo "Creating realm $REALM"
-  /opt/keycloak/bin/kcadm.sh create realms \
-    -f $IMPORT_DIR/keycloak-realm-sigic.json
-else
+if /opt/keycloak/bin/kcadm.sh get realms/$REALM > /dev/null 2>&1; then
   echo "Updating realm $REALM"
   /opt/keycloak/bin/kcadm.sh update realms/$REALM \
-    -f $IMPORT_DIR/keycloak-realm-sigic.json
+    -f $IMPORT_DIR/keycloak-realm-sigic.json \
+    -s realm=$REALM -s displayName=$REALM
+else
+  echo "Creating realm $REALM"
+  /opt/keycloak/bin/kcadm.sh create realms -s realm=$REALM -s enabled=true
+  /opt/keycloak/bin/kcadm.sh update realms/$REALM \
+    -f $IMPORT_DIR/keycloak-realm-sigic.json \
+    -s realm=$REALM -s displayName=$REALM
 fi
 
 echo "Realm OK"

@@ -135,6 +135,22 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Generated Keycloak client JSONs (contain secrets, regenerated on each install)
+overrides/keycloak/keycloak-client-*.json
+
+# Generated per-platform Keycloak subdirectories (created by sigic_install.sh)
+overrides/keycloak/*/
+
+# Generated per-platform env files (created by sigic_install.sh)
+.env.*
+
+# Generated GeoNode fixtures (created by create-socialaccount-fixture.py)
+overrides/geonode/fixtures/
+
+# Generated nginx proxy configs (regenerated on each install by sigic_install.sh)
+proxy/conf.d/*.conf
+!proxy/conf.d/00-default.conf
+
 # Environments
 .env
 .envrc
@@ -144,6 +160,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+!platforms/*/env/
+!platforms/*/env/*.env
 
 # Spyder project settings
 .spyderproject

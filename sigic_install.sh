@@ -1,26 +1,114 @@
 #!/bin/bash
 set -e
 
-FLAVOR=${1:-default}
-HTTPS_MODE=$2
-
-if [ -z "$HTTPS_MODE" ]; then
-  echo "Uso: ./sigic_install.sh <sabor> [http|https|externalhttps]"
-  echo "El valor de <sabor> debe corresponder a un archivo JSON en sigic-modos/ (ej: default.json)"
-  exit 1
-fi
-
-FLAVOR_FILE="sigic-mixins/$FLAVOR.json"
-
-if [ ! -f "$FLAVOR_FILE" ]; then
-  echo "No existe flavor: $FLAVOR_FILE"
-  exit 1
-fi
-
-echo "🔥 Usando flavor: $FLAVOR"
+ARG1=${1:-default}
+ARG2=$2
 
 # =========================
-# 🔹 HTTPS runtime (definitivo)
+# 🔹 detectar modo: platform o flavor clásico
+# =========================
+
+if [ -d "platforms/$ARG1" ]; then
+  # --- modo platform: ./sigic_install.sh <platform> <environment> ---
+  PLATFORM=$ARG1
+  ENVIRONMENT=$ARG2
+  ENV_ACTIVE=".env.${PLATFORM}-${ENVIRONMENT}"
+
+  if [ -z "$ENVIRONMENT" ]; then
+    echo "Uso: ./sigic_install.sh <platform> <environment>"
+    echo "  platform:     carpeta en platforms/ (ej: idegeo, conafor, sedema)"
+    echo "  environment:  dev | qa | prd"
+    exit 1
+  fi
+
+  PLATFORM_FILE="platforms/$PLATFORM/platform.json"
+  ENV_FILE="platforms/$PLATFORM/env/$ENVIRONMENT.env"
+
+  if [ ! -f "$PLATFORM_FILE" ]; then
+    echo "No existe: $PLATFORM_FILE"
+    exit 1
+  fi
+
+  if [ ! -f "$ENV_FILE" ]; then
+    echo "No existe: $ENV_FILE"
+    echo "Environments disponibles: $(ls platforms/$PLATFORM/env/ 2>/dev/null | sed 's/\.env//' | tr '\n' ' ')"
+    exit 1
+  fi
+  # HERENCIA
+  BASE_FLAVOR=$(jq -r '.extends' "$PLATFORM_FILE")
+  FLAVOR_FILE="sigic-mixins/$BASE_FLAVOR.json"
+
+  if [ ! -f "$FLAVOR_FILE" ]; then
+    echo "El platform '$PLATFORM' extiende '$BASE_FLAVOR' pero no existe: $FLAVOR_FILE"
+    exit 1
+  fi
+
+  echo "Platform: $PLATFORM | Environment: $ENVIRONMENT | Base flavor: $BASE_FLAVOR"
+
+  # leer env file (hostname, env_type, oidc_provider_url, https_mode)
+  while IFS='=' read -r key value; do
+    [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
+    key=$(echo "$key" | xargs)
+    value=$(echo "$value" | xargs)
+    case "$key" in
+      hostname)          HOSTNAME="$value" ;;
+      env_type)          ENV_TYPE="$value" ;;
+      oidc_provider_url) OIDC_URL="$value" ;;
+      https_mode)        HTTPS_MODE="$value" ;;
+    esac
+  done < "$ENV_FILE"
+
+  # email y homepath: platform.json overrides > flavor base
+  EMAIL=$(jq -r '.overrides.email // empty' "$PLATFORM_FILE")
+  [ -z "$EMAIL" ] && EMAIL=$(jq -r '.email // empty' "$FLAVOR_FILE")
+
+  HOMEPATH=$(jq -r '.overrides.homepath // empty' "$PLATFORM_FILE")
+  [ -z "$HOMEPATH" ] && HOMEPATH=$(jq -r '.homepath // empty' "$FLAVOR_FILE")
+
+  export COMPOSE_PROJECT_NAME="${PLATFORM}-${ENVIRONMENT}"
+  # En modo plataforma, nginx4X no expone puertos al host — nginx-proxy llega
+  # por la red sigic-proxy usando el nombre de contenedor. Exportar vacío hace
+  # que Docker asigne puertos random (no conflictúan con nginx-proxy).
+  export HTTP_PORT=""
+  export HTTPS_PORT=""
+  export FRONTEND_ADMIN_PORT=""
+  export FRONTEND_APP_PORT=""
+
+  PLATFORM_MODE=true
+  export PLATFORM_HOST=$HOSTNAME
+
+else
+  # --- modo clásico: ./sigic_install.sh <flavor> <https_mode> ---
+  FLAVOR=$ARG1
+  HTTPS_MODE=$ARG2
+
+  if [ -z "$HTTPS_MODE" ]; then
+    echo "Uso: ./sigic_install.sh <sabor> [http|https|externalhttps]"
+    echo "El valor de <sabor> debe corresponder a un archivo JSON en sigic-mixins/ (ej: default.json)"
+    exit 1
+  fi
+
+  FLAVOR_FILE="sigic-mixins/$FLAVOR.json"
+
+  if [ ! -f "$FLAVOR_FILE" ]; then
+    echo "No existe flavor: $FLAVOR_FILE"
+    exit 1
+  fi
+
+  echo "Flavor: $FLAVOR"
+
+  ENV_TYPE=$(jq -r '.env_type' "$FLAVOR_FILE")
+  HOSTNAME=$(jq -r '.hostname' "$FLAVOR_FILE")
+  EMAIL=$(jq -r '.email' "$FLAVOR_FILE")
+  OIDC_URL=$(jq -r '.oidc_provider_url' "$FLAVOR_FILE")
+  HOMEPATH=$(jq -r '.homepath' "$FLAVOR_FILE")
+
+  PLATFORM_MODE=false
+  ENV_ACTIVE=".env"
+fi
+
+# =========================
+# 🔹 HTTPS runtime
 # =========================
 
 HTTPS_FLAG=""
@@ -28,12 +116,15 @@ HTTPS_FLAG=""
 case "$HTTPS_MODE" in
   https)
     HTTPS_FLAG="--https"
+    LETSENCRYPT_MODE="staging"
     ;;
   externalhttps)
     HTTPS_FLAG="--externalhttps"
+    LETSENCRYPT_MODE="production"
     ;;
   http|"")
     HTTPS_FLAG=""
+    LETSENCRYPT_MODE=disabled
     ;;
   *)
     echo "Modo HTTPS inválido: $HTTPS_MODE"
@@ -42,11 +133,7 @@ case "$HTTPS_MODE" in
     ;;
 esac
 
-echo "🌐 Modo: ${HTTPS_MODE:-http}"
-
-# =========================
-# 🔹 generar .env + jsons
-# =========================
+echo "Modo HTTPS: ${HTTPS_MODE:-http}"
 
 # =========================
 # 🔹 convertir JSON a flags
@@ -54,24 +141,29 @@ echo "🌐 Modo: ${HTTPS_MODE:-http}"
 
 FLAGS=""
 
-# boolean flags
+# boolean flags: platform overrides > base flavor
 for key in useoidc usefrontendadmin usefrontendapp enableiaproxy enableiadb enablelevantamientoproxy enablelevantamientodb; do
-  val=$(jq -r ".$key" "$FLAVOR_FILE")
+  if [ "$PLATFORM_MODE" = true ]; then
+    val=$(jq -r ".overrides.$key // empty" "$PLATFORM_FILE")
+    [ -z "$val" ] && val=$(jq -r ".$key // empty" "$FLAVOR_FILE")
+  else
+    val=$(jq -r ".$key" "$FLAVOR_FILE")
+  fi
   if [ "$val" = "true" ]; then
     FLAGS="$FLAGS --$key"
   fi
 done
 
-# string flags
-ENV_TYPE=$(jq -r '.env_type' "$FLAVOR_FILE")
-HOSTNAME=$(jq -r '.hostname' "$FLAVOR_FILE")
-EMAIL=$(jq -r '.email' "$FLAVOR_FILE")
-OIDC_URL=$(jq -r '.oidc_provider_url' "$FLAVOR_FILE")
-HOMEPATH=$(jq -r '.homepath' "$FLAVOR_FILE")
-
 # =========================
 # 🔹 ejecutar script real
 # =========================
+
+if [ "$PLATFORM_MODE" = true ]; then
+  export KC_JSON_OUTPUT_DIR="overrides/keycloak/${COMPOSE_PROJECT_NAME}"
+fi
+
+NOINPUT_FLAG=""
+[ ! -t 0 ] && NOINPUT_FLAG="--noinput"
 
 python3 create-envfile.py \
   --env_type="$ENV_TYPE" \
@@ -80,7 +172,14 @@ python3 create-envfile.py \
   --oidc_provider_url="$OIDC_URL" \
   --homepath="$HOMEPATH" \
   $FLAGS \
-  $HTTPS_FLAG
+  $HTTPS_FLAG \
+  $NOINPUT_FLAG
+
+if [ "$PLATFORM_MODE" = true ]; then
+  mkdir -p overrides/keycloak/${COMPOSE_PROJECT_NAME}
+  cp overrides/keycloak/keycloak-realm-sigic.json \
+     "overrides/keycloak/${COMPOSE_PROJECT_NAME}/keycloak-realm-sigic.json"
+fi
 
 # =========================
 # 🔹 profiles
@@ -90,7 +189,157 @@ PROFILES=$(jq -r '.profiles | join(",")' "$FLAVOR_FILE")
 
 echo "🚀 Profiles: $PROFILES"
 
-COMPOSE_PROFILES=$PROFILES docker compose up -d
+# =========================
+# 🔹 proxy (solo en modo plataforma)
+# =========================
+
+if [ "$PLATFORM_MODE" = true ]; then
+  # setear letsencrypt según el http flag
+  sed -i "s/LETSENCRYPT_MODE=.*/LETSENCRYPT_MODE=${LETSENCRYPT_MODE}/" .env
+  case "$HTTPS_FLAG" in
+    --externalhttps|--https)
+      sed -i "s/^HTTPS_HOST=.*/HTTPS_HOST=${HOSTNAME}/" .env
+      ;;
+  esac
+  # En modo plataforma los contenedores no exponen puertos al host —
+  # nginx-proxy los alcanza por nombre en la red sigic-proxy.
+  # Vaciar las vars en .env evita conflictos si alguien corre compose directo.
+  sed -i 's/^HTTP_PORT=.*/HTTP_PORT=/' .env
+  sed -i 's/^HTTPS_PORT=.*/HTTPS_PORT=/' .env
+  sed -i 's/^FRONTEND_ADMIN_PORT=.*/FRONTEND_ADMIN_PORT=/' .env
+  sed -i 's/^FRONTEND_APP_PORT=.*/FRONTEND_APP_PORT=/' .env
+  sed -i 's/^DB_PORT=.*/DB_PORT=/' .env
+  sed -i 's/^GEOSERVER_PORT=.*/GEOSERVER_PORT=/' .env
+
+  # escribir PLATFORM_HOST y PLATFORM_NAME en .env para docker-compose.platform.yml
+  echo "PLATFORM_HOST=${HOSTNAME}" >> .env
+  echo "PLATFORM_NAME=${PLATFORM}" >> .env
+  echo "KEYCLOAK_IMPORT_SUBDIR=${COMPOSE_PROJECT_NAME}" >> .env
+
+  # en reinstall: preservar contraseñas de DB para no romper volúmenes existentes
+  if [ -f "$ENV_ACTIVE" ]; then
+    echo "🔒 Reinstall detectado — preservando contraseñas de DB existentes..."
+    for VAR in POSTGRES_PASSWORD KC_DB_PASSWORD GEONODE_DATABASE_PASSWORD GEONODE_GEODATABASE_PASSWORD GEOSERVER_ADMIN_PASSWORD ADMIN_PASSWORD; do
+      EXISTING=$(grep "^${VAR}=" "$ENV_ACTIVE" | cut -d= -f2-)
+      if [ -n "$EXISTING" ]; then
+        sed -i "s|^${VAR}=.*|${VAR}=${EXISTING}|" .env
+      fi
+    done
+    # Reconstruir URLs desde los passwords preservados para garantizar consistencia
+    # (create-envfile.py genera DATABASE_URL con password independiente de GEONODE_DATABASE_PASSWORD)
+    DB_USER=$(grep "^GEONODE_DATABASE_USER=" .env | cut -d= -f2)
+    DB_PASS=$(grep "^GEONODE_DATABASE_PASSWORD=" .env | cut -d= -f2)
+    DB_NAME=$(grep "^GEONODE_DATABASE=" .env | cut -d= -f2)
+    GEO_USER=$(grep "^GEONODE_GEODATABASE_USER=" .env | cut -d= -f2)
+    GEO_PASS=$(grep "^GEONODE_GEODATABASE_PASSWORD=" .env | cut -d= -f2)
+    GEO_NAME=$(grep "^GEONODE_GEODATABASE=" .env | cut -d= -f2)
+    if [ -n "$DB_USER" ] && [ -n "$DB_PASS" ] && [ -n "$DB_NAME" ]; then
+      sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgis://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}|" .env
+    fi
+    if [ -n "$GEO_USER" ] && [ -n "$GEO_PASS" ] && [ -n "$GEO_NAME" ]; then
+      sed -i "s|^GEODATABASE_URL=.*|GEODATABASE_URL=postgis://${GEO_USER}:${GEO_PASS}@db:5432/${GEO_NAME}|" .env
+    fi
+  fi
+
+  # guardar env de esta plataforma en su propio archivo
+  cp .env "$ENV_ACTIVE"
+
+  # garantizar que existe el directorio de overlays del frontend (puede estar vacío)
+  mkdir -p "platforms/${PLATFORM}/overrides/frontend"
+
+  # crear red compartida si no existe
+  docker network create sigic-proxy 2>/dev/null || true
+  # arrancar nginx-proxy si no está corriendo (-p proxy fija el project name independiente de COMPOSE_PROJECT_NAME)
+  docker compose -p proxy -f proxy/docker-compose.yml up -d --no-recreate nginx-proxy
+
+  # generar config y stream nginx del proxy para esta plataforma+ambiente
+  mkdir -p proxy/conf.d proxy/stream.d
+  PROXY_CONF="proxy/conf.d/${PLATFORM}-${ENVIRONMENT}.conf"
+  PROXY_STREAM_DEFAULT="proxy/stream.d/00-mappings.conf"
+
+  # bloque puerto 80 — siempre presente
+  cat > "$PROXY_CONF" << NGINXEOF
+server {
+    listen 80;
+    server_name ${HOSTNAME};
+
+    large_client_header_buffers 4 16k;
+
+    location ^~ /.well-known/acme-challenge/ {
+        proxy_pass http://nginx4${COMPOSE_PROJECT_NAME}/.well-known/acme-challenge/;
+
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        proxy_buffer_size          128k;
+        proxy_buffers              4 256k;
+        proxy_busy_buffers_size    256k;
+    }
+
+    location / {
+        proxy_pass https://nginx4${COMPOSE_PROJECT_NAME};
+
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+
+        proxy_set_header X-Forwarded-Proto \$http_x_forwarded_proto;
+        proxy_set_header X-Forwarded-Host \$http_x_forwarded_host;
+        proxy_set_header X-Forwarded-Port \$http_x_forwarded_port;
+
+        proxy_set_header X-Real-IP \$http_x_forwarded_for;
+
+        proxy_buffer_size          128k;
+        proxy_buffers              4 256k;
+        proxy_busy_buffers_size    256k;
+    }
+}
+NGINXEOF
+
+  echo "📄 Proxy config generado: $PROXY_CONF"
+
+  # Agregar nuevo host al mapping si no existe
+  if ! $(grep -Fq "${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
+    sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;/" "$PROXY_STREAM_DEFAULT"
+  fi
+
+  # En fresh install las imágenes de frontend no existen localmente — construirlas antes del up
+  if ! docker image inspect "sigic-frontend-admin:${COMPOSE_PROJECT_NAME}" > /dev/null 2>&1; then
+    echo "🔨 Imágenes de frontend no encontradas — construyendo para ${COMPOSE_PROJECT_NAME}..."
+    COMPOSE_PROFILES=$PROFILES docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml build frontend-admin frontend-app
+  fi
+  # En fresh install las imágenes de geonode no existen localmente — construirlas antes del up
+  if ! docker image inspect "sigic-geonode-wrapper:${COMPOSE_PROJECT_NAME}" > /dev/null 2>&1; then
+    echo "🔨 Imágenes de backend no encontradas — construyendo para ${COMPOSE_PROJECT_NAME}..."
+    COMPOSE_PROFILES=$PROFILES docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml build django celery
+  fi
+
+  COMPOSE_PROFILES=$PROFILES docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
+
+  # reintentar si init-keycloak-db falla por race condition con PostgreSQL
+  # (pg_isready pasa antes de que el init script haya creado los usuarios)
+  INIT_CONTAINER="${COMPOSE_PROJECT_NAME}-init-keycloak-db-1"
+  for attempt in 1 2 3; do
+    # esperar a que el contenedor termine (poll cada 10s, max 3 min)
+    for i in $(seq 1 18); do
+      STATUS=$(docker inspect --format='{{.State.Status}}' "$INIT_CONTAINER" 2>/dev/null || echo "missing")
+      [ "$STATUS" = "exited" ] || [ "$STATUS" = "missing" ] && break
+      sleep 10
+    done
+    EXIT_CODE=$(docker inspect --format='{{.State.ExitCode}}' "$INIT_CONTAINER" 2>/dev/null || echo "0")
+    [ "$EXIT_CODE" = "0" ] && break
+    echo "⚠️  init-keycloak-db falló (intento $attempt/3) — reintentando en 20s..."
+    docker rm "$INIT_CONTAINER" 2>/dev/null || true
+    sleep 20
+    COMPOSE_PROFILES=$PROFILES docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
+  done
+
+  # recargar proxy si está corriendo
+  docker exec nginx-proxy nginx -s reload 2>/dev/null || true
+else
+  COMPOSE_PROFILES=$PROFILES docker compose up -d
+fi
 
 
 # =========================
@@ -100,17 +349,29 @@ COMPOSE_PROFILES=$PROFILES docker compose up -d
 if echo "$PROFILES" | grep -q "oidc"; then
   echo "🔐 Detectado profile oidc → importando configuración de Keycloak..."
 
-  # esperar a que keycloak esté listo
+  # esperar a que keycloak esté listo (cold start puede tardar varios minutos)
   echo "⏳ Esperando Keycloak..."
-  sleep 30
+  KEYCLOAK_CONTAINER="keycloak4${COMPOSE_PROJECT_NAME}"
+  for i in $(seq 1 60); do
+    if docker exec "$KEYCLOAK_CONTAINER" bash -c '
+      exec 3<>/dev/tcp/localhost/8080 2>/dev/null || exit 1
+      printf "GET /iam/realms/master HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3
+      timeout 5 cat <&3 2>/dev/null | grep -q "\"realm\""
+    ' 2>/dev/null; then
+      echo "✅ Keycloak listo (master realm inicializado)"
+      break
+    fi
+    echo "  intento $i/60..."
+    sleep 15
+  done
 
   echo "🚀 Ejecutando import de clientes..."
 
-  docker exec keycloak4sigic bash -c "/scripts/import-keycloak-clients.sh"
+  docker exec -e KEYCLOAK_ISSUER="$OIDC_URL" keycloak4${COMPOSE_PROJECT_NAME} bash -c "/scripts/import-keycloak-clients.sh"
 
   echo "✅ Keycloak configurado"
 
-  cat .env | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
+  cat "$ENV_ACTIVE" | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
 fi
 
 
@@ -123,15 +384,40 @@ if echo "$PROFILES" | grep -q "geonode"; then
 
   python3 create-socialaccount-fixture.py
 
-  echo "⏳ Esperando Django..."
-  sleep 20
+  echo "⏳ Esperando Django (migraciones pueden tardar varios minutos)..."
+  DJANGO_CONTAINER="django4${COMPOSE_PROJECT_NAME}"
+  ELAPSED=0
+  until [ "$(docker inspect --format='{{.State.Health.Status}}' "$DJANGO_CONTAINER" 2>/dev/null)" = "healthy" ]; do
+    echo "  esperando Django... (${ELAPSED}s)"
+    sleep 30
+    ELAPSED=$((ELAPSED + 30))
+    if [ $ELAPSED -ge 5400 ]; then
+      echo "⚠️  Django no quedó healthy después de 90 min — cargá el fixture manualmente:"
+      echo "    docker exec $DJANGO_CONTAINER bash -c 'python manage.py loaddata /usr/src/sigic_geonode/fixtures/socialaccount.json'"
+      break
+    fi
+  done
 
-  echo "🚀 Cargando fixture socialaccount..."
-
-  docker exec django4sigic bash -c "python manage.py loaddata /usr/src/sigic_geonode/fixtures/socialaccount.json" || true
-
-  echo "✅ Fixture cargado"
+  if [ "$(docker inspect --format='{{.State.Health.Status}}' "$DJANGO_CONTAINER" 2>/dev/null)" = "healthy" ]; then
+    echo "✅ Django listo"
+    echo "🚀 Cargando fixture socialaccount..."
+    docker exec "$DJANGO_CONTAINER" bash -c "python manage.py loaddata /usr/src/sigic_geonode/fixtures/socialaccount.json" || true
+    echo "✅ Fixture cargado"
+  fi
 fi
 
-echo "🎉 SIGIC instalado con éxito!"
+if [ "$PLATFORM_MODE" = true ]; then
+  # Segunda pasada: levantar contenedores que quedaron en Created por dependencia de Django
+  # (en fresh install, celery y geoserver fallan al arrancar porque Django aún no está healthy)
+  COMPOSE_PROFILES=$PROFILES docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
+fi
+
+case "$LETSENCRYPT_MODE" in
+    staging|production)
+        echo "🚀 Creando certificados SSL..."
+        COMPOSE_PROFILES=https docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
+        ;;
+esac
+
 cat .env | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
+echo "🎉 SIGIC instalado con éxito!"

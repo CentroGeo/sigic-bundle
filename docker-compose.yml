@@ -142,7 +142,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8080:8080"
+      - "${GEOSERVER_PORT}:8080"
     volumes:
       - statics:/mnt/volumes/statics
       - geoserver-data-dir:/geoserver_data/data
@@ -198,7 +198,7 @@ services:
     healthcheck:
       test: "pg_isready -d postgres -U postgres"
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:5432"
     expose:
       - "5432"
     networks: [sigicnetwork]
@@ -312,7 +312,7 @@ services:
       JGROUPS_DISCOVERY_PROPERTIES: "dns_query=localhost"
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ./overrides/keycloak:/opt/keycloak/data/import
+      - ./overrides/keycloak/${KEYCLOAK_IMPORT_SUBDIR:-.}:/opt/keycloak/data/import
       - ./scripts/import-keycloak-clients.sh:/scripts/import-keycloak-clients.sh:ro
     networks: [sigicnetwork]
 
@@ -328,11 +328,12 @@ services:
     env_file:
       - .env
     ports:
-      - "3001:3000"
+      - "${FRONTEND_ADMIN_PORT}:3000"
     expose:
       - "3000"
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
+      NODE_OPTIONS: "--max-old-space-size=512"
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_API: ${NGINX_BASE_URL}/api/v2
@@ -374,11 +375,12 @@ services:
     env_file:
       - .env
     ports:
-      - "3002:3000"
+      - "${FRONTEND_APP_PORT}:3000"
     expose:
       - "3000"
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
+      NODE_OPTIONS: "--max-old-space-size=512"
       NUXT_PUBLIC_BASE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_URL: ${NGINX_BASE_URL}
       NUXT_PUBLIC_GEONODE_API: ${NGINX_BASE_URL}/api/v2
@@ -390,7 +392,7 @@ services:
       NUXT_PUBLIC_KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER:-${NGINX_BASE_URL}/iam/realms/sigic}
       NUXT_AUTH_ORIGIN: ${NUXT_AUTH_ORIGIN}
       NUXT_PUBLIC_AUTH_BASE_URL: ${NGINX_BASE_URL}/app/api/auth
-      KEYCLOAK_ISSUER: ${NGINX_BASE_URL}/iam/realms/sigic
+      KEYCLOAK_ISSUER: ${SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER}
       NUXT_PUBLIC_ENABLE_AUTH: false
       NUXT_PUBLIC_ENABLE_CATALOGO_VISTA: false
       NUXT_PUBLIC_ENABLE_CATALOGO_CARGA: false
