@@ -116,12 +116,15 @@ HTTPS_FLAG=""
 case "$HTTPS_MODE" in
   https)
     HTTPS_FLAG="--https"
+    LETSENCRYPT_MODE="staging"
     ;;
   externalhttps)
     HTTPS_FLAG="--externalhttps"
+    LETSENCRYPT_MODE="production"
     ;;
   http|"")
     HTTPS_FLAG=""
+    LETSENCRYPT_MODE=disabled
     ;;
   *)
     echo "Modo HTTPS inválido: $HTTPS_MODE"
@@ -173,6 +176,7 @@ python3 create-envfile.py \
   $NOINPUT_FLAG
 
 if [ "$PLATFORM_MODE" = true ]; then
+  mkdir -p overrides/keycloak/${COMPOSE_PROJECT_NAME}
   cp overrides/keycloak/keycloak-realm-sigic.json \
      "overrides/keycloak/${COMPOSE_PROJECT_NAME}/keycloak-realm-sigic.json"
 fi
@@ -190,6 +194,13 @@ echo "🚀 Profiles: $PROFILES"
 # =========================
 
 if [ "$PLATFORM_MODE" = true ]; then
+  # setear letsencrypt según el http flag
+  sed -i "s/LETSENCRYPT_MODE=.*/LETSENCRYPT_MODE=${LETSENCRYPT_MODE}/" .env
+  case "$HTTPS_FLAG" in
+    --externalhttps|--https)
+      sed -i "s/^HTTPS_HOST=.*/HTTPS_HOST=${HOSTNAME}/" .env
+      ;;
+  esac
   # En modo plataforma los contenedores no exponen puertos al host —
   # nginx-proxy los alcanza por nombre en la red sigic-proxy.
   # Vaciar las vars en .env evita conflictos si alguien corre compose directo.
@@ -238,13 +249,13 @@ if [ "$PLATFORM_MODE" = true ]; then
 
   # crear red compartida si no existe
   docker network create sigic-proxy 2>/dev/null || true
-
   # arrancar nginx-proxy si no está corriendo (-p proxy fija el project name independiente de COMPOSE_PROJECT_NAME)
   docker compose -p proxy -f proxy/docker-compose.yml up -d --no-recreate nginx-proxy
 
-  # generar config nginx del proxy para esta plataforma+ambiente
-  mkdir -p proxy/conf.d
+  # generar config y stream nginx del proxy para esta plataforma+ambiente
+  mkdir -p proxy/conf.d proxy/stream.d
   PROXY_CONF="proxy/conf.d/${PLATFORM}-${ENVIRONMENT}.conf"
+  PROXY_STREAM_DEFAULT="proxy/stream.d/00-mappings.conf"
 
   # bloque puerto 80 — siempre presente
   cat > "$PROXY_CONF" << NGINXEOF
@@ -254,12 +265,31 @@ server {
 
     large_client_header_buffers 4 16k;
 
-    location / {
-        proxy_pass http://nginx4${COMPOSE_PROJECT_NAME};
+    location ^~ /.well-known/acme-challenge/ {
+        proxy_pass http://nginx4${COMPOSE_PROJECT_NAME}/.well-known/acme-challenge/;
+
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+
+        proxy_buffer_size          128k;
+        proxy_buffers              4 256k;
+        proxy_busy_buffers_size    256k;
+    }
+
+    location / {
+        proxy_pass https://nginx4${COMPOSE_PROJECT_NAME};
+
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+
+        proxy_set_header X-Forwarded-Proto \$http_x_forwarded_proto;
+        proxy_set_header X-Forwarded-Host \$http_x_forwarded_host;
+        proxy_set_header X-Forwarded-Port \$http_x_forwarded_port;
+
+        proxy_set_header X-Real-IP \$http_x_forwarded_for;
+
         proxy_buffer_size          128k;
         proxy_buffers              4 256k;
         proxy_busy_buffers_size    256k;
@@ -269,17 +299,10 @@ NGINXEOF
 
   echo "📄 Proxy config generado: $PROXY_CONF"
 
-  # SSL en modo plataforma es gestionado por Mario (Apache en 10.2.7.26).
-  # Mario termina SSL externamente y reenvía HTTP plano a nuestro nginx-proxy.
-  # Descomentar este bloque si en algún momento gestionamos nuestros propios certs.
-  # if [ "$HTTPS_MODE" = "externalhttps" ]; then
-  #   docker exec nginx-proxy nginx -s reload 2>/dev/null || true
-  #   docker compose -p proxy -f proxy/docker-compose.yml --profile certbot run --rm \
-  #     certbot certonly --webroot -w /var/www/acme-challenge \
-  #     --non-interactive --agree-tos -m "${EMAIL}" -d "${HOSTNAME}" --keep-until-expiring
-  #   # agregar bloque 443 ssl al proxy config...
-  #   echo "🔒 Bloque SSL agregado al proxy config"
-  # fi
+  # Agregar nuevo host al mapping si no existe
+  if ! $(grep -Fq "${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}" "$PROXY_STREAM_DEFAULT"); then
+    sed -i "s/backend {/backend {\n    ${HOSTNAME} nginx4${COMPOSE_PROJECT_NAME}:443;/" "$PROXY_STREAM_DEFAULT"
+  fi
 
   # En fresh install las imágenes de frontend no existen localmente — construirlas antes del up
   if ! docker image inspect "sigic-frontend-admin:${COMPOSE_PROJECT_NAME}" > /dev/null 2>&1; then
@@ -389,5 +412,12 @@ if [ "$PLATFORM_MODE" = true ]; then
   COMPOSE_PROFILES=$PROFILES docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
 fi
 
-echo "🎉 SIGIC instalado con éxito!"
+case "$LETSENCRYPT_MODE" in
+    staging|production)
+        echo "🚀 Creando certificados SSL..."
+        COMPOSE_PROFILES=https docker compose --env-file "$ENV_ACTIVE" -f docker-compose.yml -f docker-compose.platform.yml up -d || true
+        ;;
+esac
+
 cat .env | grep -E '^(GEOSERVER_ADMIN_PASSWORD|ADMIN_PASSWORD)='
+echo "🎉 SIGIC instalado con éxito!"

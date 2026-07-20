@@ -22,10 +22,12 @@ services:
         PLATFORM_NAME: ${PLATFORM_NAME}
         NUXT_PUBLIC_APP_BASE_PATH: /app/
   django:
+    image: sigic-geonode-wrapper:${COMPOSE_PROJECT_NAME}
     extra_hosts:
       - "${PLATFORM_HOST}:host-gateway"
 
   celery:
+    image: sigic-geonode-wrapper:${COMPOSE_PROJECT_NAME}
     extra_hosts:
       - "${PLATFORM_HOST}:host-gateway"
 
@@ -52,6 +54,10 @@ services:
   levantamiento:
     extra_hosts:
       - "${PLATFORM_HOST}:host-gateway"
+
+  letsencrypt:
+    env_file:
+      - .env.${COMPOSE_PROJECT_NAME}
 
 networks:
   sigic-proxy:
