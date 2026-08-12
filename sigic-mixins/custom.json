@@ -1,8 +1,8 @@
 {
   "env_type": "prod",
-  "hostname": "sigic.geoint.mx",
+  "hostname": "geosuite.localhost",
   "email": "sigic@centrogeo.edu.mx",
-  "oidc_provider_url": "https://sigic.geoint.mx/iam/realms/sigic",
+  "oidc_provider_url": "http://geosuite.localhost/iam/realms/sigic",
 
   "homepath": "admin",
 
@@ -10,11 +10,11 @@
   "usefrontendadmin": true,
   "usefrontendapp": true,
 
-  "enableiaproxy": true,
-  "enableiadb": true,
+  "enableiaproxy": false,
+  "enableiadb": false,
 
-  "enablelevantamientoproxy": true,
-  "enablelevantamientodb": true,
+  "enablelevantamientoproxy": false,
+  "enablelevantamientodb": false,
 
-  "profiles": ["geonode", "oidc", "frontend", "ia", "levantamiento"]
+  "profiles": ["geonode", "oidc", "frontend"]
 }
