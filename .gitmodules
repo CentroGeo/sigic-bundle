@@ -1,26 +1,26 @@
 [submodule "geonode"]
-	path = geonode
+    path = geonode
     url = https://github.com/CentroGeo/geosuite-geonode-wrapper.git
-	branch = develop
+    branch = develop
 
 
 [submodule "keycloak"]
-	path = keycloak
-	url = https://github.com/CentroGeo/sigic-keycloak.git
+    path = keycloak
+    url = https://github.com/CentroGeo/sigic-keycloak.git
 
 [submodule "frontend"]
-	path = frontend
-	url = https://github.com/CentroGeo/geosuite-nuxt-frontend.git
-	branch = develop
+    path = frontend
+    url = https://github.com/CentroGeo/geosuite-nuxt-frontend.git
+    branch = develop
 
 [submodule "ia-engine"]
-	path = ia-engine
-	url = https://github.com/CentroGeo/sigic-ia-engine.git
+    path = ia-engine
+    url = https://github.com/CentroGeo/sigic-ia-engine.git
 
 [submodule "ia-lb"]
-	path = ia-lb
-	url = https://github.com/CentroGeo/sigic-ia-loadbalancer.git
+    path = ia-lb
+    url = https://github.com/CentroGeo/sigic-ia-loadbalancer.git
 
 [submodule "levantamiento"]
-	path = levantamiento
-	url = https://github.com/CentroGeo/sigic-levantamiento.git
+    path = levantamiento
+    url = https://github.com/CentroGeo/sigic-levantamiento.git

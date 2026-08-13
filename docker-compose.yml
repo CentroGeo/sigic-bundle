@@ -325,6 +325,8 @@ services:
       dockerfile: Dockerfile
     container_name: frontendadmin4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
+    volumes:
+      - landing_builder_data:/app/.data
     env_file:
       - .env
     ports:
@@ -375,6 +377,8 @@ services:
       dockerfile: Dockerfile
     container_name: frontendapp4${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
+    volumes:
+      - landing_builder_data:/app/.data
     env_file:
       - .env
     ports:
@@ -610,3 +614,5 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME}-levantamiento-uploads
   levantamiento-downloads:
     name: ${COMPOSE_PROJECT_NAME}-levantamiento-downloads
+  landing_builder_data:
+    name: ${COMPOSE_PROJECT_NAME}-landing_builder_data
