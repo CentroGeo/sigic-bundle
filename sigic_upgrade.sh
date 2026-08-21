@@ -9,6 +9,7 @@ export COMPOSE_PROJECT_NAME="${PLATFORM}-${ENVIRONMENT}"
 export COMPOSE_PROFILES=geonode,frontend
 
 ENV_FILE=".env.$COMPOSE_PROJECT_NAME"
+cp $ENV_FILE .env
 
 # Function to check and build specific services
 build_service() {
