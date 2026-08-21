@@ -1,4 +1,5 @@
 COMPOSE_PROJECT_NAME=${1:-sigic}
+KEYCLOAK_ISSUER=$(cat ".env.$COMPOSE_PROJECT_NAME" | grep -E '^(SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER)=')
 REALM=$(echo "${KEYCLOAK_ISSUER:-}" | sed 's|.*/realms/||' | sed 's|/.*||')
 REALM=${REALM:-sigic}
 KEYCLOAK_CONTAINER="keycloak4$COMPOSE_PROJECT"
