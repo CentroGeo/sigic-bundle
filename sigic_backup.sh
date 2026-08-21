@@ -1,5 +1,8 @@
-COMPOSE_PROJECT_NAME=${1:-sigic}
-[ "$COMPOSE_PROJECT_NAME" = "sigic" ] && ENVFILE=".env" || ENVFILE=".env.$COMPOSE_PROJECT_NAME"
+#!/bin/bash
+set -e
+
+COMPOSE_PROJECT=${1:-sigic}
+[ "$COMPOSE_PROJECT" = "sigic" ] && ENVFILE=".env" || ENVFILE=".env.$COMPOSE_PROJECT"
 KEYCLOAK_ISSUER=$(cat "$ENVFILE" | grep -E '^(SOCIALACCOUNT_OIDC_ID_TOKEN_ISSUER)=')
 REALM=$(echo "${KEYCLOAK_ISSUER:-}" | sed 's|.*/realms/||' | sed 's|/.*||')
 REALM=${REALM:-sigic}
