@@ -1,5 +1,6 @@
-COMPOSE_PROJECT=sigic
-REALM_NAME=sigic
+COMPOSE_PROJECT_NAME=${1:-sigic}
+REALM=$(echo "${KEYCLOAK_ISSUER:-}" | sed 's|.*/realms/||' | sed 's|/.*||')
+REALM=${REALM:-sigic}
 KEYCLOAK_CONTAINER="keycloak4$COMPOSE_PROJECT"
 POSTGRES_CONTAINER="db4$COMPOSE_PROJECT"
 BACKEND_CONTAINER="django4$COMPOSE_PROJECT"
@@ -10,7 +11,7 @@ mkdir -p $BACKUP_PATH/keycloak
 mkdir -p $BACKUP_PATH/geonode
 
 echo "Respaldando Keycloak realm e usuarios"
-docker exec $KEYCLOAK_CONTAINER /opt/keycloak/bin/kc.sh export --dir /tmp/export --realm $REALM_NAME --users different_files
+docker exec $KEYCLOAK_CONTAINER /opt/keycloak/bin/kc.sh export --dir /tmp/export --realm $REALM --users different_files
 docker cp $KEYCLOAK_CONTAINER:/tmp/export $BACKUP_PATH/keycloak
 
 echo "Respaldando geonode y geoserver"
