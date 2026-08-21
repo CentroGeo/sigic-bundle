@@ -28,8 +28,7 @@ build_service() {
             $build_cmd frontend-admin frontend-app django celery
             ;;
         *)
-            echo "No service name given, using default: all"
-            $build_cmd frontend-admin frontend-app django celery
+            echo "No service name given or recognized, restarting"
             ;;
     esac
 
