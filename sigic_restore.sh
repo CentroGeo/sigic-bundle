@@ -8,8 +8,8 @@ BACKEND_CONTAINER="django4$COMPOSE_PROJECT"
 FRONTEND_CONTAINER="frontendadmin4$COMPOSE_PROJECT"
 BACKUP_PATH="backup_$COMPOSE_PROJECT/"
 
-SOURCE_URL="https://example.geosuite.mx"
-TARGET_URL="https://example.centrogeo.mx"
+SOURCE_URL=$(cat "$BACKUP_PATH/source_url")
+TARGET_URL=$(cat "$ENVFILE" | grep -E '^(STATIC_URL)=')
 
 echo "Restaurando Keycloak realm e usuarios"
 docker cp $BACKUP_PATH/keycloak/export/ $KEYCLOAK_CONTAINER:/tmp/export
