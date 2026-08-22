@@ -10,9 +10,6 @@ BACKEND_CONTAINER="django4$COMPOSE_PROJECT"
 FRONTEND_CONTAINER="frontendadmin4$COMPOSE_PROJECT"
 BACKUP_PATH="backup_$COMPOSE_PROJECT"
 
-SOURCE_URL=$(cat "$BACKUP_PATH/backup_metadata" | grep -E '^(STATIC_URL)=' | cut -d'=' -f2-)
-TARGET_URL=$(cat "$ENVFILE" | grep -E '^(STATIC_URL)=' | cut -d'=' -f2-)
-
 if [ "$PREV_COMPOSE_PROJECT" != "$COMPOSE_PROJECT" ]; then
     echo "Se requiere migrar el respaldo al nuevo proyecto"
     echo "$PREV_COMPOSE_PROJECT -> $COMPOSE_PROJECT"
@@ -22,6 +19,9 @@ if [ "$PREV_COMPOSE_PROJECT" != "$COMPOSE_PROJECT" ]; then
     find $BACKUP_PATH -type f -exec sed -i "s|$PREV_COMPOSE_PROJECT|$COMPOSE_PROJECT|g" {} +
     echo "Archivos migrados"
 fi
+
+SOURCE_URL=$(cat "$BACKUP_PATH/backup_metadata" | grep -E '^(STATIC_URL)=' | cut -d'=' -f2-)
+TARGET_URL=$(cat "$ENVFILE" | grep -E '^(STATIC_URL)=' | cut -d'=' -f2-)
 
 if [ "$SOURCE_URL" != "$TARGET_URL" ]; then
     echo "Se detectó target url diferente al backup metadata url"
