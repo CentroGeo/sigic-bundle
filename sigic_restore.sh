@@ -2,6 +2,7 @@
 set -e
 
 COMPOSE_PROJECT=${1:-sigic}
+PREV_COMPOSE_PROJECT=${2-COMPOSE_PROJECT}
 [ "$COMPOSE_PROJECT" = "sigic" ] && ENVFILE=".env" || ENVFILE=".env.$COMPOSE_PROJECT"
 KEYCLOAK_CONTAINER="keycloak4$COMPOSE_PROJECT"
 POSTGRES_CONTAINER="db4$COMPOSE_PROJECT"
@@ -9,8 +10,20 @@ BACKEND_CONTAINER="django4$COMPOSE_PROJECT"
 FRONTEND_CONTAINER="frontendadmin4$COMPOSE_PROJECT"
 BACKUP_PATH="backup_$COMPOSE_PROJECT/"
 
-SOURCE_URL=$(cat "$BACKUP_PATH/source_url" | grep -E '^(STATIC_URL)=')
+if [ "$PREV_COMPOSE_PROJECT" != "$COMPOSE_PROJECT" ]; then
+    echo "Se requiere migrar el respaldo al nuevo proyecto"
+    echo "$PREV_COMPOSE_PROJECT -> $COMPOSE_PROJECT"
+    cp -r "backup_$PREV_COMPOSE_PROJECT/" $BACKUP_PATH
+    cp "$BACKUP_PATH/$PREV_COMPOSE_PROJECT-landing_builder_data.tar.gz" "$BACKUP_PATH/$COMPOSE_PROJECT-landing_builder_data.tar.gz"
+    echo "Archivos migrados"
+fi
+
+SOURCE_URL=$(cat "$BACKUP_PATH/backup_metadata" | grep -E '^(STATIC_URL)=')
 TARGET_URL=$(cat "$ENVFILE" | grep -E '^(STATIC_URL)=')
+if [ "$SOURCE_URL" != "$TARGET_URL" ]; then
+    echo "Se detectó target url diferente al source url"
+    echo "$SOURCE_URL -> $TARGET_URL"
+fi
 
 echo "Restaurando Keycloak realm e usuarios"
 docker cp $BACKUP_PATH/keycloak/export/ $KEYCLOAK_CONTAINER:/tmp/export

@@ -16,7 +16,8 @@ SOURCE_URL=$(cat "$ENVFILE" | grep -E '^(STATIC_URL)=')
 
 mkdir -p $BACKUP_PATH/keycloak
 mkdir -p $BACKUP_PATH/geonode
-echo $SOURCE_URL > $BACKUP_PATH/source_url
+echo "SOURCE_URL=$SOURCE_URL" >> $BACKUP_PATH/backup_metadata
+echo "PREV_COMPOSE_PROJECT=$COMPOSE_PROJECT" >> $BACKUP_PATH/backup_metadata
 
 echo "Respaldando Keycloak realm e usuarios"
 docker exec $KEYCLOAK_CONTAINER /opt/keycloak/bin/kc.sh export --dir /tmp/export --realm $REALM --users different_files
