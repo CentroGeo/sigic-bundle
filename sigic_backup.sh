@@ -16,7 +16,7 @@ SOURCE_URL=$(cat "$ENVFILE" | grep -E '^(STATIC_URL)=')
 
 mkdir -p $BACKUP_PATH/keycloak
 mkdir -p $BACKUP_PATH/geonode
-echo "SOURCE_URL=$SOURCE_URL" >> $BACKUP_PATH/backup_metadata
+echo "$SOURCE_URL" >> $BACKUP_PATH/backup_metadata
 echo "PREV_COMPOSE_PROJECT=$COMPOSE_PROJECT" >> $BACKUP_PATH/backup_metadata
 
 echo "Respaldando Keycloak realm e usuarios"

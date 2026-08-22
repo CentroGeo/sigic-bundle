@@ -15,14 +15,14 @@ if [ "$PREV_COMPOSE_PROJECT" != "$COMPOSE_PROJECT" ]; then
     echo "$PREV_COMPOSE_PROJECT -> $COMPOSE_PROJECT"
     cp -r "backup_$PREV_COMPOSE_PROJECT/" $BACKUP_PATH
     cp "$BACKUP_PATH/$PREV_COMPOSE_PROJECT-landing_builder_data.tar.gz" "$BACKUP_PATH/$COMPOSE_PROJECT-landing_builder_data.tar.gz"
-    find /tmp/export -type f -exec sed -i "s|$PREV_COMPOSE_PROJECT|$COMPOSE_PROJECT|g" {} +
+    find $BACKUP_PATH -type f -exec sed -i "s|$PREV_COMPOSE_PROJECT|$COMPOSE_PROJECT|g" {} +
     echo "Archivos migrados"
 fi
 
 SOURCE_URL=$(cat "$BACKUP_PATH/backup_metadata" | grep -E '^(STATIC_URL)=')
 TARGET_URL=$(cat "$ENVFILE" | grep -E '^(STATIC_URL)=')
 if [ "$SOURCE_URL" != "$TARGET_URL" ]; then
-    echo "Se detectó target url diferente al source url"
+    echo "Se detectó target url diferente al backup metadata url"
     echo "$SOURCE_URL -> $TARGET_URL"
 fi
 
