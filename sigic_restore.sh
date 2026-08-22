@@ -2,7 +2,7 @@
 set -e
 
 COMPOSE_PROJECT=${1:-sigic}
-PREV_COMPOSE_PROJECT=${2-COMPOSE_PROJECT}
+PREV_COMPOSE_PROJECT=${2:-$COMPOSE_PROJECT}
 [ "$COMPOSE_PROJECT" = "sigic" ] && ENVFILE=".env" || ENVFILE=".env.$COMPOSE_PROJECT"
 KEYCLOAK_CONTAINER="keycloak4$COMPOSE_PROJECT"
 POSTGRES_CONTAINER="db4$COMPOSE_PROJECT"
@@ -15,7 +15,7 @@ if [ "$PREV_COMPOSE_PROJECT" != "$COMPOSE_PROJECT" ]; then
     echo "$PREV_COMPOSE_PROJECT -> $COMPOSE_PROJECT"
     cp -r "backup_$PREV_COMPOSE_PROJECT/" $BACKUP_PATH
     mv "$BACKUP_PATH/$PREV_COMPOSE_PROJECT-landing_builder_data.tar.gz" "$BACKUP_PATH/$COMPOSE_PROJECT-landing_builder_data.tar.gz"
-    for config in $BACKUP_PATH/keycloak/export/$PREV_COMPOSE_PROJECT*; do mv "$config" $(echo "$config" | sed "s/$COMPOSE_PROJECT/$PREV_COMPOSE_PROJECT/g"); done
+    for config in $BACKUP_PATH/keycloak/export/$PREV_COMPOSE_PROJECT*; do mv "$config" $(echo "$config" | sed "s/$PREV_COMPOSE_PROJECT/$COMPOSE_PROJECT/g"); done
     find $BACKUP_PATH -type f -exec sed -i "s|$PREV_COMPOSE_PROJECT|$COMPOSE_PROJECT|g" {} +
     echo "Archivos migrados"
 fi
