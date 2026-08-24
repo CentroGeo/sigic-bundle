@@ -15,7 +15,10 @@ if [ "$PREV_COMPOSE_PROJECT" != "$COMPOSE_PROJECT" ]; then
     echo "$PREV_COMPOSE_PROJECT -> $COMPOSE_PROJECT"
     cp -r "backup_$PREV_COMPOSE_PROJECT/" $BACKUP_PATH
     mv "$BACKUP_PATH/$PREV_COMPOSE_PROJECT-landing_builder_data.tar.gz" "$BACKUP_PATH/$COMPOSE_PROJECT-landing_builder_data.tar.gz"
-    for config in $BACKUP_PATH/keycloak/export/$PREV_COMPOSE_PROJECT*; do mv "$config" $(echo "$config" | sed "s/$PREV_COMPOSE_PROJECT/$COMPOSE_PROJECT/g"); done
+    for config in $BACKUP_PATH/keycloak/export/$PREV_COMPOSE_PROJECT*; do
+        newname=$(basename "$config" | sed "s/^$PREV_COMPOSE_PROJECT/$COMPOSE_PROJECT/")
+        mv "$config" "$BACKUP_PATH/keycloak/export/$newname"
+    done
     find $BACKUP_PATH -type f -exec sed -i "s|$PREV_COMPOSE_PROJECT|$COMPOSE_PROJECT|g" {} +
     echo "Archivos migrados"
 fi
