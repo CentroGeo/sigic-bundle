@@ -4,6 +4,7 @@ set -e  # Exit on any error
 # Set default env file based on platform
 PLATFORM=$1
 ENVIRONMENT=$2
+SERVICE_NAME=$3
 
 export COMPOSE_PROJECT_NAME="${PLATFORM}-${ENVIRONMENT}"
 export COMPOSE_PROFILES=geonode,frontend
@@ -13,12 +14,11 @@ cp $ENV_FILE .env
 
 # Function to check and build specific services
 build_service() {
-    local service_name="$3"
     local build_cmd="docker compose --env-file $ENV_FILE -f docker-compose.yml -f docker-compose.platform.yml build"
 
-    echo "🏗️  Building $service_name..."
+    echo "🏗️  Building $SERVICE_NAME..."
 
-    case "$service_name" in
+    case "$SERVICE_NAME" in
         frontend)
             $build_cmd frontend-admin frontend-app
             ;;
@@ -33,7 +33,7 @@ build_service() {
             ;;
     esac
 
-    echo "✅ $service_name build completed"
+    echo "✅ $SERVICE_NAME build completed"
 }
 
 # Function to start services
