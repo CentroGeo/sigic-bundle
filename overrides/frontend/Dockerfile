@@ -23,7 +23,7 @@ COPY frontend/package*.json ./
 # scripts necesarios para postinstall
 COPY frontend/scripts/ ./scripts/
 
-RUN npm install --include=dev --legacy-peer-deps --ignore-scripts
+RUN npm install --include=dev --legacy-peer-deps
 
 COPY frontend/ .
 

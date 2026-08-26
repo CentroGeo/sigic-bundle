@@ -216,6 +216,21 @@ if [ "$PLATFORM_MODE" = true ]; then
   echo "PLATFORM_NAME=${PLATFORM}" >> .env
   echo "KEYCLOAK_IMPORT_SUBDIR=${COMPOSE_PROJECT_NAME}" >> .env
 
+  # aplicar variables adicionales del env file de plataforma (todo lo que no sea hostname/env_type/oidc_provider_url/https_mode)
+  while IFS='=' read -r key value; do
+    [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
+    key=$(echo "$key" | xargs)
+    value=$(echo "$value" | xargs)
+    case "$key" in
+      hostname|env_type|oidc_provider_url|https_mode) continue ;;
+    esac
+    if grep -q "^${key}=" .env; then
+      sed -i "s|^${key}=.*|${key}=${value}|" .env
+    else
+      echo "${key}=${value}" >> .env
+    fi
+  done < "$ENV_FILE"
+
   # en reinstall: preservar contraseñas de DB para no romper volúmenes existentes
   if [ -f "$ENV_ACTIVE" ]; then
     echo "🔒 Reinstall detectado — preservando contraseñas de DB existentes..."
@@ -352,7 +367,7 @@ if echo "$PROFILES" | grep -q "oidc"; then
   # esperar a que keycloak esté listo (cold start puede tardar varios minutos)
   echo "⏳ Esperando Keycloak..."
   KEYCLOAK_CONTAINER="keycloak4${COMPOSE_PROJECT_NAME}"
-  for i in $(seq 1 60); do
+  for i in $(seq 1 120); do
     if docker exec "$KEYCLOAK_CONTAINER" bash -c '
       exec 3<>/dev/tcp/localhost/8080 2>/dev/null || exit 1
       printf "GET /iam/realms/master HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3
@@ -361,7 +376,7 @@ if echo "$PROFILES" | grep -q "oidc"; then
       echo "✅ Keycloak listo (master realm inicializado)"
       break
     fi
-    echo "  intento $i/60..."
+    echo "  intento $i/120..."
     sleep 15
   done
 
